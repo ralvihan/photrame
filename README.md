@@ -26,7 +26,7 @@ Take photos with your camera or upload your own, pick a frame, and download your
 
 - Camera photobooth with timer and multiple shots
 - Upload your own photos
-- Custom photo strip frames (Photrame, Blob) with separate color options
+- Custom photo strip frames (Photrame, Blob, Ticket, Tag) with separate color options
 - Filters, brightness, and contrast
 - Adjust each photo: drag to move, zoom to fit
 - Hand-drawn signature (3 thicknesses) on the Photrame frame

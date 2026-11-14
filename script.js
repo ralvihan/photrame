@@ -11,7 +11,10 @@ const FRAMES=[
    t:{W:1020,H:2026,ox:36,oy:0,pw:528,ph:660,gap:23,cols:1,rows:3}},
   // tiket pesawat: 2 foto berjejer. tinter:'ticket' = recolor khusus (lihat tintTicket)
   {id:'ticket',name:'Ticket',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-ticket.png',tinter:'ticket',blue:true,
-   t:{W:1616,H:709,ox:763,oy:152,pw:396,ph:528,gap:24,cols:2,rows:1}}
+   t:{W:1616,H:709,ox:763,oy:152,pw:396,ph:528,gap:24,cols:2,rows:1}},
+  // graffiti tag + barcode (1080x1920, bolongan foto 1026x1400). tinter:'ink' = recolor putih->bg, hitam->tinta (lihat INK_TONES)
+  {id:'tag',name:'Tag',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-tag.png',tinter:'ink',blue:true,
+   t:{W:1080,H:1920,ox:27,oy:103,pw:1026,ph:1400,cols:1,rows:1}}
 ];
 // font tanda tangan: "Other Hand" (file lokal di fonts/, lihat style.css), cadangan "Mr Dafoe" dari Google Fonts
 const SIG_FONT='"Other Hand","Mr Dafoe",cursive';
@@ -255,9 +258,31 @@ function tintTicket(img,mode){
   x.putImageData(id,0,0);
   return c;
 }
+// ---- recolor frame tag ----
+// PNG tag cuma putih (bingkai) + hitam (tag, barcode, teks) + abu antialias, alpha dipertahankan (bolongan foto tetap bolong).
+// bg = warna bingkai, ink = warna tag/barcode/teks. Dark: tinta putih. Blue: tinta putih (kontras ke biru lebih bagus daripada hitam).
+const INK_TONES={
+  dark:{bg:[17,17,17],ink:[255,255,255]},
+  blue:{bg:[55,81,255],ink:[255,255,255]}
+};
+function tintInk(img,mode){
+  const T=INK_TONES[mode];if(!T)return null;
+  const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+  const x=c.getContext('2d');x.drawImage(img,0,0);
+  let id;try{id=x.getImageData(0,0,c.width,c.height)}catch(e){return null}
+  const d=id.data,bg=T.bg,ink=T.ink;
+  for(let i=0;i<d.length;i+=4){
+    if(d[i+3]===0)continue;
+    const k=(d[i]+d[i+1]+d[i+2])/765; // 0 = hitam (tinta), 1 = putih (bingkai)
+    d[i]=ink[0]+(bg[0]-ink[0])*k;d[i+1]=ink[1]+(bg[1]-ink[1])*k;d[i+2]=ink[2]+(bg[2]-ink[2])*k;
+  }
+  x.putImageData(id,0,0);
+  return c;
+}
+const TINTERS={ticket:tintTicket,ink:tintInk};
 function tinted(f,key,img,mode){
   const c=f[key]||(f[key]={});
-  if(c[mode]===undefined)c[mode]=(f.tinter==='ticket'?tintTicket:tintFrame)(img,mode);
+  if(c[mode]===undefined)c[mode]=(TINTERS[f.tinter]||tintFrame)(img,mode);
   return c[mode]||img;
 }
 function frameImg(f){
