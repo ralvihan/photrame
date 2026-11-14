@@ -26,11 +26,10 @@ Take photos with your camera or upload your own, pick a frame, and download your
 
 - Camera photobooth with timer and multiple shots
 - Upload your own photos
-- Photo strip layouts
-- Frame library: Classic (Black, White, Dark Gray, Navy) and Originals (custom frames), with separate color options
+- Custom photo strip frames (Photrame, Blob) with separate color options
 - Filters, brightness, and contrast
 - Adjust each photo: drag to move, zoom to fit
-- Hand-drawn signature (3 thicknesses) on the Photrame (1×1) frame
+- Hand-drawn signature (3 thicknesses) on the Photrame frame
 - Download as PNG, or save your raw shots
 
 ## Privacy

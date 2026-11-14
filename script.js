@@ -1,12 +1,13 @@
+// Black/White/Gray/Navy cuma buat showcase di library (LIB), nggak muncul di picker booth.
 const FRAMES=[
   {id:'black',name:'Black',bg:'#111111',fg:'#ffffff',g:'linear-gradient(160deg,#d4d4d4,#737373)'},
   {id:'white',name:'White',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)'},
   {id:'gray',name:'Dark Gray',bg:'#4b5563',fg:'#ffffff',g:'linear-gradient(160deg,#e5e7eb,#6b7280)'},
   {id:'navy',name:'Navy',bg:'#1b2a4a',fg:'#ffffff',g:'linear-gradient(160deg,#d6def0,#6b7da3)'},
   // frame PNG custom: cuma jalan di layout 1x1. t = ukuran frame (px, skala 1x) + posisi & ukuran bolongan foto
-  {id:'photrame',name:'Photrame (1×1)',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x1.png',
+  {id:'photrame',name:'Photrame',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x1.png',
    t:{W:600,H:806,ox:36,oy:36,pw:528,ph:660,cols:1,rows:1}},
-  {id:'blob',name:'Blob (1×3)',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x3.png',midSrc:'images/blob-1x3.png',blue:true,
+  {id:'blob',name:'Blob',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x3.png',midSrc:'images/blob-1x3.png',blue:true,
    t:{W:1020,H:2026,ox:36,oy:0,pw:528,ph:660,gap:23,cols:1,rows:3}}
 ];
 // font tanda tangan: "Other Hand" (file lokal di fonts/, lihat style.css), cadangan "Mr Dafoe" dari Google Fonts
@@ -16,7 +17,7 @@ const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 const state={
-  frame:FRAMES[0],shots:[null,null,null],busy:false,stream:null,
+  frame:FRAMES.find(f=>f.id==='photrame'),shots:[null,null,null],busy:false,stream:null,
   edit:{filter:'none',bright:0,contrast:0},
   adj:[],tone:'light',sigs:[],sigSel:null
 };
@@ -26,18 +27,11 @@ const rawBtn=$('rawBtn'),upBtn=$('upBtn'),upIn=$('upIn');
 let upTarget=null;
 const msg=$('msg'),out=$('out'),slotsEl=$('slots'),nWrap=$('nShots'),tPick=$('tmrPick'),tWrap=$('tmrWrap'),tBtn=$('tmrBtn'),tLbl=$('tmrLbl');
 state.timer=3;
-const BASE_LAYOUTS=[[1,1],[1,2],[1,3],[1,4],[2,2],[2,4]];
 const defaultLayout=n=>[1,Math.min(n,4)];
 state.layout=defaultLayout(3);state.sel=[0,1,2];state.active=null;
 const slotCount=()=>state.layout[0]*state.layout[1];
 function dims(){return{cols:state.layout[0],rows:state.layout[1]}}
 function resizeShots(n){while(state.shots.length<n)state.shots.push(null);state.shots.length=n}
-function layoutOptions(){
-  const n=state.shots.length,seen=new Set(),out=[];
-  const list=[...BASE_LAYOUTS];
-  for(const l of list){const k=l.join('x');if(l[0]*l[1]<=n&&!seen.has(k)){seen.add(k);out.push(l)}}
-  return out.sort((a,b)=>a[0]*a[1]-b[0]*b[1]||a[0]-b[0]);
-}
 function normSel(){
   const n=state.shots.length,c=slotCount(),old=state.sel;
   const next=Array.from({length:c},(_,i)=>(old[i]!=null&&old[i]<n)?old[i]:null);
@@ -47,12 +41,9 @@ function normSel(){
   state.sel=next;
 }
 function renderL(){
-  const n=state.shots.length,opts=layoutOptions(),t=state.frame.t;
+  const t=state.frame.t;
   if(t)state.layout=[t.cols,t.rows];
-  else if(!opts.some(l=>l.join('x')===state.layout.join('x')))state.layout=defaultLayout(n);
   normSel();
-  $('layoutCard').hidden=!!t;
-  $('layoutPicker').innerHTML=opts.map(l=>`<button class="chip2${l.join('x')===state.layout.join('x')?' sel':''}" data-l="${l.join('x')}">${l[0]}×${l[1]}</button>`).join('');
 }
 const LIB=[['photrame',[1]],['white',[2]],['navy',[3,4,3,4]],['blob',[5,6,5]],['white',[7,8,9]],['black',[10,11,12]]];
 function stripHTML(f,label,ids){
@@ -88,10 +79,9 @@ $('tonePicker').addEventListener('click',e=>{
   const b=e.target.closest('[data-tone]');if(!b)return;
   state.tone=b.dataset.tone;renderTone();scheduleRender();
 });
-// Classic = bingkai warna polos, Originals = bingkai desain custom (PNG)
-const FRAME_GROUPS=[['Classic',f=>!f.src],['Originals',f=>!!f.src]];
+// picker cuma nampilin frame custom (yang punya PNG)
 function renderFramePicker(){
-  $('framePicker').innerHTML=FRAME_GROUPS.map(([label,test])=>`<div class="grp"><div class="pickLbl">${label}</div><div class="chips">${FRAMES.filter(test).map(f=>`<button class="chip2 ${f.id===state.frame.id?'sel':''}" data-id="${f.id}"><i style="background:${f.bg}"></i>${f.name}</button>`).join('')}</div></div>`).join('');
+  $('framePicker').innerHTML='<div class="chips">'+FRAMES.filter(f=>f.src).map(f=>`<button class="chip2 ${f.id===state.frame.id?'sel':''}" data-id="${f.id}">${f.name}</button>`).join('')+'</div>';
 }
 $('framePicker').addEventListener('click',e=>{const c=e.target.closest('.chip2');if(c)pickFrame(c.dataset.id,false)});
 function pickFrame(id,go){
@@ -794,8 +784,3 @@ FRAMES.forEach(f=>{if(f.src){
   if(f.midSrc){f.mid=new Image();f.mid.onload=()=>scheduleRender();f.mid.src=f.midSrc}
 }});
 ['"Other Hand"','"Mr Dafoe"'].forEach(n=>{if(document.fonts&&document.fonts.load)document.fonts.load('64px '+n).then(()=>{scheduleRender();drawLibSig()}).catch(()=>{})});
-$('layoutPicker').addEventListener('click',e=>{
-  const b=e.target.closest('[data-l]');if(!b||state.busy)return;
-  state.layout=b.dataset.l.split('x').map(Number);
-  renderL();scheduleRender();
-});
