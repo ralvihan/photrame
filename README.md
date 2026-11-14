@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="logo/logo-mark.svg" alt="Photrame logo" width="80" height="80">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="logo/logo-mark-white.svg">
+    <source media="(prefers-color-scheme: light)" srcset="logo/logo-mark.svg">
+    <img src="logo/logo-mark.svg" alt="Photrame logo" width="80" height="80">
+  </picture>
 </p>
 
 <h1 align="center">Photrame</h1>
