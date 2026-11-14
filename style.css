@@ -11,8 +11,7 @@ h2{font-size:clamp(2rem,5vw,3rem);letter-spacing:-.035em;line-height:1.05;text-a
 
 nav{position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);left:50%;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:4px;padding:8px 8px 8px 18px;border-radius:999px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);border:1px solid #e5e7eb;white-space:nowrap}
 .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;letter-spacing:-.02em;margin-right:14px;color:#111;text-decoration:none}
-.logo i{width:22px;height:22px;border-radius:7px;background:#111;display:grid;place-items:center}
-.logo i::after{content:"";width:8px;height:8px;border-radius:50%;background:#fff}
+.logo svg{width:22px;height:22px;flex:none}
 nav a.l{color:#333;text-decoration:none;font-size:15px;font-weight:500;padding:8px 12px;border-radius:999px;transition:background .2s}
 nav a.l:hover{background:#f0f2f5}
 nav a.cta{margin-left:6px;background:#111;color:#fff;font-weight:600;font-size:15px;padding:9px 18px;border-radius:999px;text-decoration:none;transition:transform .2s}

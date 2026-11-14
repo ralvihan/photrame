@@ -1,6 +1,10 @@
-# Photrame
+<p align="center">
+  <img src="logo/logo-mark.svg" alt="Photrame logo" width="80" height="80">
+</p>
 
-**Capture the moment.**
+<h1 align="center">Photrame</h1>
+
+<p align="center"><b>Capture the moment.</b></p>
 
 Free online photobooth. No login, no uploads.
 
