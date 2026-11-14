@@ -21,7 +21,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 const state={
   frame:FRAMES.find(f=>f.id==='photrame'),shots:[null,null,null],busy:false,stream:null,
-  edit:{filter:'none',bright:0,contrast:0},
+  edit:{filter:'none',bright:0,contrast:0,sat:0,warm:0,fade:0,vig:0},
   adj:[],tone:'light',sigs:[],sigSel:null
 };
 const video=$('video'),idle=$('idle'),countEl=$('count'),flashEl=$('flash'),dots=$('dots');
@@ -103,11 +103,11 @@ $('filters').addEventListener('click',e=>{
   const c=e.target.closest('.chip2');if(!c)return;
   state.edit.filter=c.dataset.f;renderFilters();scheduleRender();
 });
-$('bright').addEventListener('input',e=>{state.edit.bright=+e.target.value;scheduleRender()});
-$('contrast').addEventListener('input',e=>{state.edit.contrast=+e.target.value;scheduleRender()});
+const EDIT_KEYS=['bright','contrast','sat','warm','fade','vig'];
+EDIT_KEYS.forEach(k=>$(k).addEventListener('input',e=>{state.edit[k]=+e.target.value;scheduleRender()}));
 $('resetEdit').addEventListener('click',()=>{
-  state.edit={filter:'none',bright:0,contrast:0};
-  $('bright').value=0;$('contrast').value=0;
+  state.edit={filter:'none',bright:0,contrast:0,sat:0,warm:0,fade:0,vig:0};
+  EDIT_KEYS.forEach(k=>$(k).value=0);
   renderFilters();scheduleRender();
 });
 
@@ -119,10 +119,11 @@ function processed(src,w,h,adj){
   const z=adj?adj.z:1,px=adj?adj.x:0,py=adj?adj.y:0;
   const sc=Math.max(w/src.width,h/src.height)*z,sw=w/sc,sh=h/sc;
   x.drawImage(src,(src.width-sw)*(1+px)/2,(src.height-sh)*(1+py)/2,sw,sh,0,0,w,h);
-  const {filter,bright,contrast}=state.edit;
-  if(filter==='none'&&!bright&&!contrast)return c;
+  const {filter,bright,contrast,sat,warm,fade,vig}=state.edit;
+  if(filter==='none'&&!bright&&!contrast&&!sat&&!warm&&!fade&&!vig)return c;
   const img=x.getImageData(0,0,w,h),d=img.data;
   const k=contrast*2.55,cf=(259*(k+255))/(255*(259-k)),add=bright*2.55;
+  const sk=1+sat/100,wm=warm/50,fd=fade/100,vg=vig/100,cx=w/2,cy=h/2;
   for(let i=0;i<d.length;i+=4){
     let r=d[i],g=d[i+1],b=d[i+2];
     switch(filter){
@@ -141,7 +142,11 @@ function processed(src,w,h,adj){
       case 'film':{const t=((.299*r+.587*g+.114*b)-128)/128;r+=t*10+4;g+=2;b+=-t*12+4;break}
     }
     if(contrast){r=cf*(r-128)+128;g=cf*(g-128)+128;b=cf*(b-128)+128}
+    if(sat){const y=.299*r+.587*g+.114*b;r=y+(r-y)*sk;g=y+(g-y)*sk;b=y+(b-y)*sk}
+    if(warm){r+=wm*20;g+=wm*4;b-=wm*20}
+    if(fade){r=r*(1-.25*fd)+55*fd;g=g*(1-.25*fd)+55*fd;b=b*(1-.25*fd)+55*fd}
     r+=add;g+=add;b+=add;
+    if(vig){const pi=i>>2,dx=((pi%w)-cx)/cx,dy=(((pi/w)|0)-cy)/cy;let t=(Math.sqrt(dx*dx+dy*dy)/1.4142-.35)/.65;t=t<0?0:t>1?1:t;const m=1-vg*.8*t*t;r*=m;g*=m;b*=m}
     d[i]=r<0?0:r>255?255:r;d[i+1]=g<0?0:g>255?255:g;d[i+2]=b<0?0:b>255?255:b;
   }
   x.putImageData(img,0,0);
