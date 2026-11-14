@@ -15,7 +15,7 @@ const FRAMES=[
 ];
 // font tanda tangan: "Other Hand" (file lokal di fonts/, lihat style.css), cadangan "Mr Dafoe" dari Google Fonts
 const SIG_FONT='"Other Hand","Mr Dafoe",cursive';
-const FILTERS=[['none','None'],['bw','B&W'],['sepia','Sepia'],['warm','Warm'],['cool','Cool'],['fade','Fade']];
+const FILTERS=[['none','None'],['bw','B&W'],['sepia','Sepia'],['warm','Warm'],['cool','Cool'],['fade','Fade'],['vivid','Vivid'],['noir','Noir'],['vintage','Vintage'],['matte','Matte'],['rose','Rose'],['sunset','Sunset'],['fresh','Fresh'],['film','Film']];
 const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -131,6 +131,14 @@ function processed(src,w,h,adj){
       case 'warm':r*=1.1;b*=.9;break;
       case 'cool':r*=.92;b*=1.1;break;
       case 'fade':r=r*.85+38;g=g*.85+38;b=b*.85+38;break;
+      case 'vivid':{const y=.299*r+.587*g+.114*b;r=y+(r-y)*1.45;g=y+(g-y)*1.45;b=y+(b-y)*1.45;break}
+      case 'noir':{const y=(.299*r+.587*g+.114*b-128)*1.3+128;r=g=b=y;break}
+      case 'vintage':{const nr=.393*r+.769*g+.189*b,ng=.349*r+.686*g+.168*b,nb=.272*r+.534*g+.131*b;r=(r+nr)*.45+30;g=(g+ng)*.45+26;b=(b+nb)*.45+20;break}
+      case 'matte':{const y=.299*r+.587*g+.114*b;r=(y+(r-y)*.8)*.88+30;g=(y+(g-y)*.8)*.88+30;b=(y+(b-y)*.8)*.88+32;break}
+      case 'rose':r=r*1.06+8;g*=.94;b=b*1.04+6;break;
+      case 'sunset':r=r*1.15+6;g*=.96;b*=.8;break;
+      case 'fresh':r*=.93;g*=1.05;b*=1.06;break;
+      case 'film':{const t=((.299*r+.587*g+.114*b)-128)/128;r+=t*10+4;g+=2;b+=-t*12+4;break}
     }
     if(contrast){r=cf*(r-128)+128;g=cf*(g-128)+128;b=cf*(b-128)+128}
     r+=add;g+=add;b+=add;
