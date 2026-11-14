@@ -70,6 +70,9 @@ h1{font-weight:700;font-size:clamp(2.8rem,8vw,6rem);line-height:1;letter-spacing
 .pick{display:flex;gap:4px;justify-content:center;overflow-x:auto;scrollbar-width:none;padding:2px 4px}
 .pick::-webkit-scrollbar{display:none}
 .pick.lock{opacity:.4;pointer-events:none}
+#tmrPick{justify-content:flex-start}
+#tmrPick .pk:first-child{margin-left:auto}
+#tmrPick .pk:last-child{margin-right:auto}
 .pk{flex:none;min-width:34px;height:34px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:#e5e7eb;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s,color .2s}
 .pk:hover{background:rgba(255,255,255,.1)}
 .pk.sel{background:rgba(255,255,255,.16);color:#ffd60a}
