@@ -4,7 +4,7 @@ const FRAMES=[
   {id:'gray',name:'Dark Gray',bg:'#4b5563',fg:'#ffffff',g:'linear-gradient(160deg,#e5e7eb,#6b7280)'},
   {id:'navy',name:'Navy',bg:'#1b2a4a',fg:'#ffffff',g:'linear-gradient(160deg,#d6def0,#6b7da3)'},
   // frame PNG custom: cuma jalan di layout 1x1. t = ukuran frame (px, skala 1x) + posisi & ukuran bolongan foto
-  {id:'photrame',name:'Photrame (1×1)',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x1.png',sig:true,
+  {id:'photrame',name:'Photrame (1×1)',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x1.png',
    t:{W:600,H:806,ox:36,oy:36,pw:528,ph:660,cols:1,rows:1}},
   {id:'blob',name:'Blob (1×3)',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x3.png',midSrc:'images/blob-1x3.png',blue:true,
    t:{W:1020,H:2026,ox:36,oy:0,pw:528,ph:660,gap:23,cols:1,rows:3}}
@@ -18,7 +18,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const state={
   frame:FRAMES[0],shots:[null,null,null],busy:false,stream:null,
   edit:{filter:'none',bright:0,contrast:0},
-  sig:'',adj:[],tone:'light'
+  adj:[],tone:'light',sigs:[],sigSel:null
 };
 const video=$('video'),idle=$('idle'),countEl=$('count'),flashEl=$('flash'),dots=$('dots');
 const camBtn=$('camBtn'),shootBtn=$('shootBtn'),clearBtn=$('clearBtn'),dlBtn=$('dlBtn');
@@ -109,7 +109,6 @@ $('filters').addEventListener('click',e=>{
 });
 $('bright').addEventListener('input',e=>{state.edit.bright=+e.target.value;scheduleRender()});
 $('contrast').addEventListener('input',e=>{state.edit.contrast=+e.target.value;scheduleRender()});
-$('sigIn').addEventListener('input',e=>{state.sig=e.target.value.slice(0,10);scheduleRender()});
 $('resetEdit').addEventListener('click',()=>{
   state.edit={filter:'none',bright:0,contrast:0};
   $('bright').value=0;$('contrast').value=0;
@@ -155,9 +154,9 @@ function geom(S){
   const H=pad+rows*ph+(rows-1)*gap+pad;
   return{cols,rows,n,W,H,ox:pad,oy:pad,gap,pw,ph};
 }
-// tanda tangan: pojok kiri atas, agak keluar dari foto ke bingkai kiri, miring ~8 derajat, otomatis dikecilin kalau namanya panjang
+// (dipakai cuma buat contoh di library frame) tanda tangan: pojok kiri atas, agak keluar dari foto ke bingkai kiri, miring ~8 derajat, otomatis dikecilin kalau namanya panjang
 function drawSig(ctx,S,x,y,pw,nm,col){
-  const name=(nm!=null?nm:state.sig).trim().slice(0,10);if(!name)return;
+  const name=(nm||'').trim().slice(0,10);if(!name)return;
   const ang=.14;
   let fs=64*S;ctx.font=`${fs}px ${SIG_FONT}`;
   let m=ctx.measureText(name),w=m.width;const max=pw*.5;
@@ -230,7 +229,7 @@ function drawStrip(cv,S){
   }
   // frame PNG ditumpuk paling atas (di atas foto dan tanda tangan)
   const fi=frameImg(f);if(fi)ctx.drawImage(fi,0,0,W,H);
-  if(f.sig)drawSig(ctx,S,ox,oy,pw,null,dark?'#ffffff':'#000000');
+  drawSigs(ctx,W,H);
 }
 
 function buildSlots(){
@@ -312,7 +311,7 @@ function updateUI(){
   hint.hidden=false;
   hint.textContent='Drag a photo into the preview to add or replace it (you can use the same photo more than once). Tap a photo in the preview to remove it.';
   slotsEl.querySelectorAll('.rt').forEach(b=>b.disabled=state.busy);
-  ['sigLbl','sigIn'].forEach(id=>$(id).hidden=!state.frame.sig);
+  $('sigAdj').hidden=!getSig(state.sigSel);
   dots.innerHTML=state.stream?Array.from({length:n},(_,i)=>`<i class="${state.shots[i]?'on':''}"></i>`).join(''):'';
 }
 
@@ -479,6 +478,132 @@ dlBtn.addEventListener('click',()=>{
   },'image/png');
 });
 
+
+/* ---------- signature (gambar sendiri) ---------- */
+const SIG_COLORS=['#000000','#ffffff','#3751ff'];
+const pad=$('sigPad'),padCtx=pad.getContext('2d'),padHint=$('padHint');
+let padStrokes=[],padCur=null;
+const PAD_LW=6;
+function strokePath(ctx,pts){
+  ctx.beginPath();
+  if(pts.length===1){ctx.arc(pts[0][0],pts[0][1],ctx.lineWidth/2,0,Math.PI*2);ctx.fill();return}
+  ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length-1;i++){const mx=(pts[i][0]+pts[i+1][0])/2,my=(pts[i][1]+pts[i+1][1])/2;ctx.quadraticCurveTo(pts[i][0],pts[i][1],mx,my)}
+  const l=pts[pts.length-1];ctx.lineTo(l[0],l[1]);ctx.stroke();
+}
+function setInk(ctx){ctx.strokeStyle=ctx.fillStyle='#000000';ctx.lineWidth=PAD_LW;ctx.lineCap='round';ctx.lineJoin='round'}
+function redrawPad(){
+  padCtx.clearRect(0,0,pad.width,pad.height);setInk(padCtx);
+  padStrokes.forEach(p=>strokePath(padCtx,p));
+  padHint.hidden=padStrokes.length>0||!!padCur;
+  $('sigAdd').disabled=!padStrokes.length;
+}
+function padPt(e){const r=pad.getBoundingClientRect();return[(e.clientX-r.left)*pad.width/r.width,(e.clientY-r.top)*pad.height/r.height]}
+pad.addEventListener('pointerdown',e=>{
+  if(e.button>0)return;
+  pad.setPointerCapture(e.pointerId);padCur=[padPt(e)];padStrokes.push(padCur);redrawPad();e.preventDefault();
+});
+pad.addEventListener('pointermove',e=>{if(!padCur)return;padCur.push(padPt(e));redrawPad()});
+['pointerup','pointercancel'].forEach(t=>pad.addEventListener(t,()=>{padCur=null;redrawPad()}));
+$('sigClear').addEventListener('click',()=>{padStrokes=[];padCur=null;redrawPad()});
+$('sigAdd').addEventListener('click',()=>{
+  if(!padStrokes.length)return;
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  padStrokes.forEach(p=>p.forEach(([x,y])=>{x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}));
+  const m=PAD_LW*2,w=Math.max(8,Math.ceil(x1-x0+m*2)),h=Math.max(8,Math.ceil(y1-y0+m*2));
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  const c=cv.getContext('2d');setInk(c);c.translate(m-x0,m-y0);
+  padStrokes.forEach(p=>strokePath(c,p));
+  const id=Date.now()+Math.random();
+  const wFrac=Math.min(.5,Math.max(.16,w/pad.width*.55));
+  state.sigs.push({id,cv,ar:w/h,cx:.5,cy:.5,w:wFrac,rot:0,color:'#000000',col:null});
+  state.sigSel=id;
+  padStrokes=[];padCur=null;redrawPad();
+  renderSigs();scheduleRender();
+});
+redrawPad();
+
+function getSig(id){return state.sigs.find(s=>s.id===id)}
+function sigColored(s){
+  if(s.col&&s.col.color===s.color)return s.col.cv;
+  const cv=document.createElement('canvas');cv.width=s.cv.width;cv.height=s.cv.height;
+  const c=cv.getContext('2d');c.drawImage(s.cv,0,0);
+  c.globalCompositeOperation='source-in';c.fillStyle=s.color;c.fillRect(0,0,cv.width,cv.height);
+  s.col={color:s.color,cv};return cv;
+}
+function drawSigs(ctx,W,H){
+  state.sigs.forEach(s=>{
+    const w=s.w*W,h=w/s.ar;
+    ctx.save();ctx.translate(s.cx*W,s.cy*H);ctx.rotate(s.rot);
+    ctx.drawImage(sigColored(s),-w/2,-h/2,w,h);
+    ctx.restore();
+  });
+}
+const sigLayer=$('sigLayer');
+const ROT_ICON='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5"/></svg>';
+function styleSig(el,s){
+  el.style.left=s.cx*100+'%';el.style.top=s.cy*100+'%';el.style.width=s.w*100+'%';
+  el.style.aspectRatio=String(s.ar);el.style.transform=`translate(-50%,-50%) rotate(${s.rot}rad)`;
+}
+function renderSigs(){
+  sigLayer.innerHTML='';
+  state.sigs.forEach(s=>{
+    const el=document.createElement('div');
+    el.className='sg'+(s.id===state.sigSel?' act':'');el.dataset.id=s.id;
+    styleSig(el,s);
+    if(s.id===state.sigSel)el.innerHTML='<button class="sgx" type="button" aria-label="Delete signature">×</button><button class="sgr" type="button" aria-label="Rotate and resize">'+ROT_ICON+'</button>';
+    sigLayer.appendChild(el);
+  });
+  const sel=getSig(state.sigSel);
+  $('sigAdj').hidden=!sel;
+  $('sigColors').innerHTML=SIG_COLORS.map(c=>`<button type="button" class="swc${sel&&sel.color===c?' sel':''}" data-c="${c}" style="background:${c}" aria-label="Color ${c}"></button>`).join('');
+}
+function selectSig(id){if(state.sigSel!==id){state.sigSel=id;renderSigs()}}
+function delSig(id){state.sigs=state.sigs.filter(s=>s.id!==id);if(state.sigSel===id)state.sigSel=null;renderSigs();scheduleRender()}
+$('sigDel').addEventListener('click',()=>{if(state.sigSel!=null)delSig(state.sigSel)});
+$('sigColors').addEventListener('click',e=>{
+  const b=e.target.closest('.swc'),s=getSig(state.sigSel);if(!b||!s)return;
+  s.color=b.dataset.c;renderSigs();scheduleRender();
+});
+let sgDrag=null;
+sigLayer.addEventListener('pointerdown',e=>{
+  const el=e.target.closest('.sg');if(!el||e.button>0)return;
+  const s=getSig(+el.dataset.id);if(!s)return;
+  if(e.target.closest('.sgx'))return;
+  const r=sigLayer.getBoundingClientRect();
+  const rot=!!e.target.closest('.sgr');
+  selectSig(s.id);
+  const cur=sigLayer.querySelector(`.sg[data-id="${s.id}"]`);
+  const cxp=r.left+s.cx*r.width,cyp=r.top+s.cy*r.height;
+  sgDrag={s,el:cur,rot,x:e.clientX,y:e.clientY,cx:s.cx,cy:s.cy,r,
+    d0:Math.hypot(e.clientX-cxp,e.clientY-cyp)||1,a0:Math.atan2(e.clientY-cyp,e.clientX-cxp),w0:s.w,rot0:s.rot,cxp,cyp};
+  e.preventDefault();
+});
+window.addEventListener('pointermove',e=>{
+  const d=sgDrag;if(!d)return;
+  const s=d.s;
+  if(d.rot){
+    const dist=Math.hypot(e.clientX-d.cxp,e.clientY-d.cyp),ang=Math.atan2(e.clientY-d.cyp,e.clientX-d.cxp);
+    s.w=Math.max(.06,Math.min(1.3,d.w0*dist/d.d0));s.rot=d.rot0+(ang-d.a0);
+  }else{
+    s.cx=Math.max(0,Math.min(1,d.cx+(e.clientX-d.x)/d.r.width));
+    s.cy=Math.max(0,Math.min(1,d.cy+(e.clientY-d.y)/d.r.height));
+  }
+  styleSig(d.el,s);scheduleRender();
+});
+['pointerup','pointercancel'].forEach(t=>window.addEventListener(t,()=>{sgDrag=null}));
+sigLayer.addEventListener('click',e=>{
+  if(e.target.closest('.sgx')){const el=e.target.closest('.sg');delSig(+el.dataset.id)}
+});
+sigLayer.addEventListener('wheel',e=>{
+  const el=e.target.closest('.sg');if(!el)return;
+  const s=getSig(+el.dataset.id);if(!s||s.id!==state.sigSel)return;
+  e.preventDefault();
+  s.w=Math.max(.06,Math.min(1.3,s.w*(e.deltaY<0?1.06:1/1.06)));styleSig(el,s);scheduleRender();
+},{passive:false});
+document.addEventListener('pointerdown',e=>{
+  if(state.sigSel!=null&&!e.target.closest('.sg')&&!e.target.closest('#sigAdj')){state.sigSel=null;renderSigs()}
+});
 
 /* ---------- editable cells + drag & drop ---------- */
 const cellsEl=$('cells');
