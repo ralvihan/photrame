@@ -8,7 +8,10 @@ const FRAMES=[
   {id:'photrame',name:'Photrame',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x1.png',
    t:{W:600,H:806,ox:36,oy:36,pw:528,ph:660,cols:1,rows:1}},
   {id:'blob',name:'Blob',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-1x3.png',midSrc:'images/blob-1x3.png',blue:true,
-   t:{W:1020,H:2026,ox:36,oy:0,pw:528,ph:660,gap:23,cols:1,rows:3}}
+   t:{W:1020,H:2026,ox:36,oy:0,pw:528,ph:660,gap:23,cols:1,rows:3}},
+  // tiket pesawat: 2 foto berjejer. tinter:'ticket' = recolor khusus (lihat tintTicket)
+  {id:'ticket',name:'Ticket',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-ticket.png',tinter:'ticket',blue:true,
+   t:{W:1616,H:709,ox:763,oy:152,pw:396,ph:528,gap:24,cols:2,rows:1}}
 ];
 // font tanda tangan: "Other Hand" (file lokal di fonts/, lihat style.css), cadangan "Mr Dafoe" dari Google Fonts
 const SIG_FONT='"Other Hand","Mr Dafoe",cursive';
@@ -191,9 +194,57 @@ function tintFrame(img,mode){
   x.putImageData(id,0,0);
   return c;
 }
+// ---- recolor frame tiket ----
+// PNG tiket: header (blue 3751FF, navy 081982, putih) di atas, body (putih, hitam, abu peta F0F0F0) di bawah.
+// Tiap tone punya warna body (bg/map/text) dan header (hb=warna header, hn=gelombang, hw=teks & ikon).
+const TICKET_HDR=124/709; // tinggi header terhadap tinggi PNG
+const TICKET_TONES={
+  dark:{bg:[17,17,17],map:[34,34,34],text:[255,255,255],hb:[44,44,44],hn:[10,10,10],hw:[255,255,255]},
+  blue:{bg:[55,81,255],map:[80,104,255],text:[255,255,255],hb:[255,255,255],hn:[208,216,255],hw:[55,81,255]}
+};
+function ticketPix(d,W,H,mode){
+  const T=TICKET_TONES[mode];if(!T)return;
+  const hh=Math.round(H*TICKET_HDR);
+  // header = campuran putih / biru / navy -> hitung bobot tiap warna (barycentric)
+  const u0=-200,u1=-174,u2=0,v0=-247,v1=-230,v2=-125;
+  const uu=u0*u0+u1*u1,uv=u0*v0+u1*v1,vv=v0*v0+v1*v1+v2*v2,det=uu*vv-uv*uv;
+  const bg=T.bg,mp=T.map,tx=T.text;
+  for(let y=0;y<H;y++){
+    const head=y<hh;
+    for(let x=0;x<W;x++){
+      const i=(y*W+x)*4;if(d[i+3]===0)continue;
+      const r=d[i],g=d[i+1],b=d[i+2];
+      let o0,o1,o2;
+      if(head){
+        const e0=r-255,e1=g-255,e2=b-255;
+        const a=u0*e0+u1*e1,c=v0*e0+v1*e1+v2*e2;
+        let s=(vv*a-uv*c)/det,t=(uu*c-uv*a)/det;
+        s=s<0?0:s>1?1:s;t=t<0?0:t>1?1:t;
+        const sum=s+t;if(sum>1){s/=sum;t/=sum}
+        const w=1-s-t;
+        o0=s*T.hb[0]+t*T.hn[0]+w*T.hw[0];o1=s*T.hb[1]+t*T.hn[1]+w*T.hw[1];o2=s*T.hb[2]+t*T.hn[2]+w*T.hw[2];
+      }else{
+        // body netral: 255 putih -> bg, 240 peta -> map, 0 hitam -> text
+        const gl=(r+g+b)/3;
+        let k,a0,a1;
+        if(gl>=240){k=(255-gl)/15;a0=bg;a1=mp}else{k=gl/240;a0=tx;a1=mp}
+        o0=a0[0]+(a1[0]-a0[0])*k;o1=a0[1]+(a1[1]-a0[1])*k;o2=a0[2]+(a1[2]-a0[2])*k;
+      }
+      d[i]=o0;d[i+1]=o1;d[i+2]=o2;
+    }
+  }
+}
+function tintTicket(img,mode){
+  const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+  const x=c.getContext('2d');x.drawImage(img,0,0);
+  let id;try{id=x.getImageData(0,0,c.width,c.height)}catch(e){return null}
+  ticketPix(id.data,c.width,c.height,mode);
+  x.putImageData(id,0,0);
+  return c;
+}
 function tinted(f,key,img,mode){
   const c=f[key]||(f[key]={});
-  if(c[mode]===undefined)c[mode]=tintFrame(img,mode);
+  if(c[mode]===undefined)c[mode]=(f.tinter==='ticket'?tintTicket:tintFrame)(img,mode);
   return c[mode]||img;
 }
 function frameImg(f){
