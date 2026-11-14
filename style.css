@@ -175,7 +175,7 @@ nav{padding-left:14px}
 nav a.l.h{display:none}
 .logo{margin-right:6px}
 #booth{padding:50px 14px 80px}
-.fc.p2,.fc.p3{display:none}
+.lib{box-sizing:border-box;height:780px;padding-top:380px}
 .fc.p0,.fc.p4{left:4%}
 .fc.p1,.fc.p5{right:4%}
 .hero{padding-bottom:90px}
