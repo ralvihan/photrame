@@ -78,7 +78,8 @@ function drawLibSig(){
 drawLibSig();
 
 function renderTone(){
-  const el=$('tonePicker');el.hidden=!state.frame.src;
+  $('toneCard').hidden=!state.frame.src;
+  const el=$('tonePicker');
   const tones=[['light','White','#ffffff'],['dark','Black','#111111']];
   if(state.frame.blue)tones.push(['blue','Blue','#3751ff']);
   el.innerHTML=tones.map(([id,n,c])=>`<button class="chip2 ${state.tone===id?'sel':''}" data-tone="${id}"><i style="background:${c}"></i>${n}</button>`).join('');
@@ -87,8 +88,10 @@ $('tonePicker').addEventListener('click',e=>{
   const b=e.target.closest('[data-tone]');if(!b)return;
   state.tone=b.dataset.tone;renderTone();scheduleRender();
 });
+// Classic = bingkai warna polos, Originals = bingkai desain custom (PNG)
+const FRAME_GROUPS=[['Classic',f=>!f.src],['Originals',f=>!!f.src]];
 function renderFramePicker(){
-  $('framePicker').innerHTML=FRAMES.map(f=>`<button class="chip2 ${f.id===state.frame.id?'sel':''}" data-id="${f.id}"><i style="background:${f.bg}"></i>${f.name}</button>`).join('');
+  $('framePicker').innerHTML=FRAME_GROUPS.map(([label,test])=>`<div class="grp"><div class="pickLbl">${label}</div><div class="chips">${FRAMES.filter(test).map(f=>`<button class="chip2 ${f.id===state.frame.id?'sel':''}" data-id="${f.id}"><i style="background:${f.bg}"></i>${f.name}</button>`).join('')}</div></div>`).join('');
 }
 $('framePicker').addEventListener('click',e=>{const c=e.target.closest('.chip2');if(c)pickFrame(c.dataset.id,false)});
 function pickFrame(id,go){
@@ -96,7 +99,7 @@ function pickFrame(id,go){
   if(state.frame.t&&!f.t)state.layout=defaultLayout(state.shots.length);
   state.frame=f;
   if(state.tone==='blue'&&!f.blue)state.tone='light';
-  renderFramePicker();renderTone();renderL();scheduleRender();
+  renderFramePicker();renderTone();renderL();syncSig();scheduleRender();
   if(go)navTo('/booth',true);
 }
 
@@ -229,7 +232,7 @@ function drawStrip(cv,S){
   }
   // frame PNG ditumpuk paling atas (di atas foto dan tanda tangan)
   const fi=frameImg(f);if(fi)ctx.drawImage(fi,0,0,W,H);
-  drawSigs(ctx,W,H);
+  if(sigOK())drawSigs(ctx,W,H);
 }
 
 function buildSlots(){
@@ -311,7 +314,7 @@ function updateUI(){
   hint.hidden=false;
   hint.textContent='Drag a photo into the preview to add or replace it (you can use the same photo more than once). Tap a photo in the preview to remove it.';
   slotsEl.querySelectorAll('.rt').forEach(b=>b.disabled=state.busy);
-  $('sigAdj').hidden=!getSig(state.sigSel);
+  $('sigAdj').hidden=!(sigOK()&&getSig(state.sigSel));
   dots.innerHTML=state.stream?Array.from({length:n},(_,i)=>`<i class="${state.shots[i]?'on':''}"></i>`).join(''):'';
 }
 
@@ -483,7 +486,7 @@ dlBtn.addEventListener('click',()=>{
 const SIG_COLORS=['#000000','#ffffff','#3751ff'];
 const pad=$('sigPad'),padCtx=pad.getContext('2d'),padHint=$('padHint');
 let padStrokes=[],padCur=null;
-const PAD_LW=6;
+const SIG_WIDTHS=[['Thin',4],['Medium',7],['Thick',12]];let padLW=7;
 function strokePath(ctx,pts){
   ctx.beginPath();
   if(pts.length===1){ctx.arc(pts[0][0],pts[0][1],ctx.lineWidth/2,0,Math.PI*2);ctx.fill();return}
@@ -491,17 +494,18 @@ function strokePath(ctx,pts){
   for(let i=1;i<pts.length-1;i++){const mx=(pts[i][0]+pts[i+1][0])/2,my=(pts[i][1]+pts[i+1][1])/2;ctx.quadraticCurveTo(pts[i][0],pts[i][1],mx,my)}
   const l=pts[pts.length-1];ctx.lineTo(l[0],l[1]);ctx.stroke();
 }
-function setInk(ctx){ctx.strokeStyle=ctx.fillStyle='#000000';ctx.lineWidth=PAD_LW;ctx.lineCap='round';ctx.lineJoin='round'}
+function setInk(ctx){ctx.strokeStyle=ctx.fillStyle='#000000';ctx.lineWidth=padLW;ctx.lineCap='round';ctx.lineJoin='round'}
+function inkStroke(ctx,p){ctx.lineWidth=p.w;strokePath(ctx,p)}
 function redrawPad(){
   padCtx.clearRect(0,0,pad.width,pad.height);setInk(padCtx);
-  padStrokes.forEach(p=>strokePath(padCtx,p));
+  padStrokes.forEach(p=>inkStroke(padCtx,p));
   padHint.hidden=padStrokes.length>0||!!padCur;
   $('sigAdd').disabled=!padStrokes.length;
 }
 function padPt(e){const r=pad.getBoundingClientRect();return[(e.clientX-r.left)*pad.width/r.width,(e.clientY-r.top)*pad.height/r.height]}
 pad.addEventListener('pointerdown',e=>{
   if(e.button>0)return;
-  pad.setPointerCapture(e.pointerId);padCur=[padPt(e)];padStrokes.push(padCur);redrawPad();e.preventDefault();
+  pad.setPointerCapture(e.pointerId);padCur=[padPt(e)];padCur.w=padLW;padStrokes.push(padCur);redrawPad();e.preventDefault();
 });
 pad.addEventListener('pointermove',e=>{if(!padCur)return;padCur.push(padPt(e));redrawPad()});
 ['pointerup','pointercancel'].forEach(t=>pad.addEventListener(t,()=>{padCur=null;redrawPad()}));
@@ -510,10 +514,10 @@ $('sigAdd').addEventListener('click',()=>{
   if(!padStrokes.length)return;
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   padStrokes.forEach(p=>p.forEach(([x,y])=>{x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}));
-  const m=PAD_LW*2,w=Math.max(8,Math.ceil(x1-x0+m*2)),h=Math.max(8,Math.ceil(y1-y0+m*2));
+  const m=Math.max(...padStrokes.map(p=>p.w))*2,w=Math.max(8,Math.ceil(x1-x0+m*2)),h=Math.max(8,Math.ceil(y1-y0+m*2));
   const cv=document.createElement('canvas');cv.width=w;cv.height=h;
   const c=cv.getContext('2d');setInk(c);c.translate(m-x0,m-y0);
-  padStrokes.forEach(p=>strokePath(c,p));
+  padStrokes.forEach(p=>inkStroke(c,p));
   const id=Date.now()+Math.random();
   const wFrac=Math.min(.5,Math.max(.16,w/pad.width*.55));
   state.sigs.push({id,cv,ar:w/h,cx:.5,cy:.5,w:wFrac,rot:0,color:'#000000',col:null});
@@ -522,6 +526,18 @@ $('sigAdd').addEventListener('click',()=>{
   renderSigs();scheduleRender();
 });
 redrawPad();
+function renderSigW(){
+  $('sigWidth').innerHTML=SIG_WIDTHS.map(([n,w])=>`<button type="button" class="chip2${w===padLW?' sel':''}" data-w="${w}"><span class="lw" style="--h:${Math.max(2,Math.round(w/2))}px"></span>${n}</button>`).join('');
+}
+$('sigWidth').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(!b)return;padLW=+b.dataset.w;renderSigW()});
+// tanda tangan cuma aktif di frame Photrame (1x1)
+const sigOK=()=>state.frame.id==='photrame';
+function syncSig(){
+  const ok=sigOK();
+  $('sigCard').hidden=!ok;
+  if(!ok)state.sigSel=null;
+  renderSigs();
+}
 
 function getSig(id){return state.sigs.find(s=>s.id===id)}
 function sigColored(s){
@@ -547,6 +563,7 @@ function styleSig(el,s){
 }
 function renderSigs(){
   sigLayer.innerHTML='';
+  if(!sigOK()){$('sigAdj').hidden=true;return}
   state.sigs.forEach(s=>{
     const el=document.createElement('div');
     el.className='sg'+(s.id===state.sigSel?' act':'');el.dataset.id=s.id;
@@ -766,7 +783,7 @@ window.addEventListener('popstate',()=>navTo(location.pathname.replace(/\/+$/,''
   });
 })();
 
-renderFramePicker();renderTone();renderFilters();renderL();renderN();renderT();buildSlots();scheduleRender();
+renderFramePicker();renderTone();renderFilters();renderL();renderN();renderT();buildSlots();renderSigW();syncSig();scheduleRender();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{scheduleRender();drawLibSig()});
 // load gambar frame PNG + font tanda tangan, lalu render ulang
 FRAMES.forEach(f=>{if(f.src){

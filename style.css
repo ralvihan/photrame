@@ -223,7 +223,7 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit
 .adj input{flex:1;min-width:0}
 /* signature */
 .padWrap{position:relative;margin-top:12px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;overflow:hidden}
-#sigPad{display:block;width:100%;aspect-ratio:5/2;touch-action:none;cursor:crosshair}
+#sigPad{display:block;width:100%;aspect-ratio:5/2;touch-action:none;cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 21l1.5-5L16 4.5a2.1 2.1 0 013 3L7.5 19z' fill='%23fff' stroke='%23111' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14 6.5l3 3' stroke='%23111' stroke-width='1.6'/%3E%3C/svg%3E") 3 21,crosshair}
 .padHint{position:absolute;inset:0;display:grid;place-items:center;color:#c4c8ce;font-size:15px;font-weight:500;pointer-events:none}
 .padHint[hidden]{display:none}
 .sigLayer{position:absolute;inset:0;pointer-events:none}
@@ -237,3 +237,5 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit
 .swc{width:26px;height:26px;border-radius:50%;border:1px solid #d1d5db;cursor:pointer;padding:0}
 .swc.sel{outline:2px solid #111;outline-offset:2px}
 .adj[hidden]{display:none}
+.grp+.grp{margin-top:14px}
+.lw{display:block;width:18px;height:var(--h);border-radius:999px;background:currentColor}
