@@ -49,7 +49,7 @@ h1{font-weight:700;font-size:clamp(2.8rem,8vw,6rem);line-height:1;letter-spacing
 .card{background:#fff;border:1px solid #e5e7eb;border-radius:24px;padding:20px}
 .ct{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:14px;letter-spacing:.02em;text-transform:uppercase}
 .cam{max-width:480px;margin:0 auto;padding:12px 12px 18px;border-radius:32px;background:#0c0c0d;border-color:#0c0c0d;box-shadow:0 24px 70px rgba(0,0,0,.22)}
-.view{position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:#1a1a1c;display:grid;place-items:center;container-type:size}
+.view{position:relative;aspect-ratio:5/4;border-radius:20px;overflow:hidden;background:#1a1a1c;display:grid;place-items:center;container-type:size}
 .view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 .idle{position:relative;color:#9ca3af;text-align:center;font-size:14px;padding:20px;line-height:1.5}
 .count{position:absolute;inset:0;display:none;place-items:center;font-size:clamp(3.5rem,14vw,6rem);font-weight:700;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.5);pointer-events:none}
@@ -108,7 +108,7 @@ select,input[type=text]{font-family:inherit;font-size:13px;padding:6px 10px;bord
 .col{display:flex;flex-direction:column;gap:20px}
 .sticky{position:sticky;top:90px}
 .slots{display:grid;gap:10px}
-.slot{position:relative;aspect-ratio:4/5;border-radius:0;background:#eef0f3;overflow:hidden}
+.slot{position:relative;aspect-ratio:5/4;border-radius:0;background:#eef0f3;overflow:hidden}
 .slot canvas{position:absolute;inset:0;width:100%;height:100%;display:none}
 .slot.has canvas{display:block}
 .slot .num{position:absolute;left:8px;top:8px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}

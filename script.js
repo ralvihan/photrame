@@ -38,7 +38,7 @@ let upTarget=null;
 const msg=$('msg'),out=$('out'),slotsEl=$('slots'),nWrap=$('phMenu'),tPick=$('tmrMenu'),tWrap=tPick,tBtn=$('tmrBtn'),tLbl=$('tmrLbl');
 state.timer=0;
 const MAX_SHOTS=10; // batas foto per sesi (picker jumlah foto + upload)
-const CAM_RATIO=4/5; // rasio kamera + hasil jepretan + thumbnail (lebar/tinggi). 1 = kotak, 3/4 = agak pendek, 4/5 = lebih tinggi
+const CAM_RATIO=5/4; // rasio kamera + hasil jepretan + thumbnail (lebar/tinggi). makin kecil = makin tinggi: 4/3 (awal, paling pendek) > 5/4 > 7/6 > 9/8 > 1 (kotak) > 5/6 > 4/5 > 3/4 (paling tinggi)
 video.parentElement.style.aspectRatio=String(CAM_RATIO);
 const defaultLayout=n=>[1,Math.min(n,4)];
 state.layout=defaultLayout(1);state.sel=[0];state.active=null;
