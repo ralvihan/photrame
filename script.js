@@ -1048,6 +1048,10 @@ FRAMES.forEach(f=>{if(f.src){
   },{passive:true});
 })();
 
+// ===== proteksi gambar (penghalang aja, bukan keamanan penuh): blok menu klik kanan / long-press & drag di gambar, canvas, video =====
+document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('img,canvas,video,.cell,.slot,.sg'))e.preventDefault()});
+document.addEventListener('dragstart',e=>{if(e.target.tagName==='IMG')e.preventDefault()});
+
 // ===== awan: animasi geser cuma jalan pas awannya kelihatan di layar (class .off = pause, hemat GPU/CPU) =====
 (function(){
   const cs=document.querySelectorAll('.clouds');

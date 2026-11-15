@@ -296,3 +296,6 @@ nav{animation:navIn .8s cubic-bezier(.2,.8,.2,1) backwards}
 /* biar ringan: di library cukup 1 layer awan, dan animasi di-pause pas awan di luar layar (class .off dipasang script.js) */
 .lib .cl2{display:none}
 .clouds.off .cl{animation-play-state:paused}
+/* proteksi gambar: nggak bisa di-drag, di-select, atau di-long-press buat "Save image" (HP). pointer-events:none bikin klik kanan/tahan tembus ke elemen di belakangnya, bukan ke gambar */
+img{pointer-events:none;-webkit-user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+canvas,video{-webkit-touch-callout:none}
