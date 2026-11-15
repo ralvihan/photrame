@@ -57,6 +57,9 @@ function renderL(){
 }
 // kartu di fan library: [frame, foto, tone]. urutan = kiri ke kanan
 const LIB=[['blob',['hero-1','hero-4','hero-1']],['uno',['hero-5']],['tag',['hero-2']],['photrame',['hero-6']]];
+// bubble chat di kartu library: id frame -> [teks, warna (red/black/blue/green)]. frame yang nggak ada di sini nggak dapet bubble
+const BUBBLES={uno:['@uno','red'],photrame:['@photrame','black']};
+const bubHTML=id=>BUBBLES[id]?`<span class="bub bub-${BUBBLES[id][1]} bub-${id}" aria-hidden="true">${BUBBLES[id][0]}</span>`:'';
 function stripHTML(f,label,ids,tone){
   if(f.midSrc){
     const t=f.t,pc=(v,d)=>(v/d*100)+'%';
@@ -79,7 +82,7 @@ function stripHTML(f,label,ids,tone){
 
 $('fcw').insertAdjacentHTML('beforeend',LIB.map(([id,ids,tone],i)=>{
   const f=FRAMES.find(f=>f.id===id),ar=f.t.W/f.t.H*(id==='ticket'?.5:1); // ticket lebar: tingginya setengah kartu lain
-  return `<div class="fk k${i}" tabindex="0" role="button" aria-label="${f.name} frame" style="width:calc(var(--h)*${ar.toFixed(4)})">${stripHTML(f,true,ids,tone)}</div>`;
+  return `<div class="fk k${i}" tabindex="0" role="button" aria-label="${f.name} frame" style="width:calc(var(--h)*${ar.toFixed(4)})">${stripHTML(f,true,ids,tone)}${bubHTML(id)}</div>`;
 }).join(''));
 
 // frame PNG yang di library pakai tone dark/blue: gambar versi recolor-nya ke canvas (nunggu PNG frame kebaca)
