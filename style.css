@@ -23,7 +23,7 @@ nav a.cta:hover{transform:scale(1.05)}
 .btn.ghost{background:#fff;color:#111;border:1px solid #e5e7eb;box-shadow:none}
 .btn.sm{margin-top:0;padding:8px 14px;font-size:13px;box-shadow:none}
 
-.hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 130px) 20px calc(env(safe-area-inset-bottom,0px) + 110px);background:var(--bg);isolation:isolate}
+.hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 130px) 20px calc(env(safe-area-inset-bottom,0px) + 110px);background:linear-gradient(180deg,#d9dde3 0%,#e8ebef 42%,var(--bg) 80%);isolation:isolate}
 h1{font-weight:700;font-size:clamp(2.8rem,8vw,6rem);line-height:1;letter-spacing:-.045em;text-align:center}
 .sub{margin-top:20px;font-size:clamp(1rem,2vw,1.25rem);font-weight:500;text-align:center;line-height:1.45;color:#6b7280}
 .env{position:relative;margin-top:clamp(40px,6vw,70px);width:min(700px,100%);aspect-ratio:700/400}
@@ -267,9 +267,9 @@ nav{animation:navIn .8s cubic-bezier(.2,.8,.2,1) backwards}
 .js .rv.in{opacity:1;translate:0 0}
 /* footer cuma fade (tanpa geser): footer overflow:hidden, kalau digeser ke bawah barisnya kepotong & nggak kebaca observer */
 .js footer .rv{translate:0 0}
-/* tulisan PHOTRAME di footer: huruf naik satu-satu */
-.js .fwm.rv{opacity:1;translate:0 0;transition:none}
-.js .fwm.rv>*{opacity:0;translate:0 60%;transition:opacity .7s cubic-bezier(.2,.8,.2,1),translate .9s cubic-bezier(.2,.8,.2,1);transition-delay:calc(var(--d,0)*60ms)}
+/* tulisan PHOTRAME di footer: huruf naik satu-satu dari balik garis bawah, melambat halus di akhir */
+.js .fwm.rv{opacity:1;translate:0 0;transition:none;clip-path:inset(-8% -4% 0 -4%)} /* huruf dipotong di garis bawah wordmark: keluar dari "celah", bukan numpuk di teks bawahnya */
+.js .fwm.rv>*{opacity:0;translate:0 105%;transition:opacity .5s ease-out,translate 1.1s cubic-bezier(.22,1,.36,1);transition-delay:calc(var(--d,0)*70ms)}
 .js .fwm.rv.in>*{opacity:1;translate:0 0}
 /* kartu library: muncul satu-satu dari bawah, bubble nyusul */
 .js .fan:not(.in) .fk{opacity:0}
@@ -280,3 +280,13 @@ nav{animation:navIn .8s cubic-bezier(.2,.8,.2,1) backwards}
   20%,35%{opacity:1;scale:.96;transform:translate(var(--sx,0px),0px) rotate(0deg)}
 }
 .fan.in .bub{opacity:1;animation:bubPop .5s cubic-bezier(.2,.9,.3,1.4) 1.4s backwards}
+/* pas class rv baru dipasang (awal load), jangan animasi dari "kelihatan" ke "sembunyi" (itu yang bikin kedip) */
+.rvs .rv,.rvs .rv>*{transition:none!important}
+
+/* ===== awan di hero: 2 layer tekstur (images/clouds-1.webp & clouds-2.webp) geser pelan, cuma pakai translate (ringan) ===== */
+.clouds{--ch:clamp(420px,52vw,760px);position:absolute;left:0;right:0;top:0;height:var(--ch);z-index:-1;overflow:hidden;pointer-events:none;-webkit-mask-image:linear-gradient(180deg,#000 55%,transparent);mask-image:linear-gradient(180deg,#000 55%,transparent);animation:cfade 1.8s ease-out backwards}
+.cl{position:absolute;top:0;left:0;height:100%;width:calc(100% + var(--ch)*2);background-repeat:repeat-x;background-size:calc(var(--ch)*2) 100%;will-change:translate}
+.cl1{background-image:url(images/clouds-1.webp);animation:cdrift 110s linear infinite}
+.cl2{background-image:url(images/clouds-2.webp);background-position:calc(var(--ch)*.7) 0;opacity:.9;animation:cdrift 170s linear infinite}
+@keyframes cdrift{to{translate:calc(var(--ch)*-2) 0}} /* geser tepat 1 tile (lebar tile = 2 x tinggi) = loop mulus */
+@keyframes cfade{from{opacity:0}}

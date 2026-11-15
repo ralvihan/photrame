@@ -1020,11 +1020,14 @@ FRAMES.forEach(f=>{if(f.src){
     ['#booth h2','#booth .lead','.boothWrap>.card.cam','.boothWrap>.upRow'], // muncul berurutan
     ['.story .r'],['.lib h2'],['.libc'],['footer .fttop'],['footer .fwm'],['footer .ftb']
   ];
-  const els=[];
+  const els=[],root=document.documentElement;
+  root.classList.add('rvs'); // matiin transition sebentar: elemen langsung mulai dari kondisi "sembunyi", bukan animasi ke sana
   groups.forEach((g,gi)=>g.forEach((sel,i)=>document.querySelectorAll(sel).forEach(el=>{
     el.classList.add('rv');if(gi===0)el.style.setProperty('--d',i);els.push(el);
   })));
   if(fwm)[...fwm.children].forEach((c,i)=>c.style.setProperty('--d',i));
+  void document.body.offsetHeight;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>root.classList.remove('rvs')));
   const targets=fan?[...els,fan]:els;
   if(!('IntersectionObserver' in window)){targets.forEach(el=>el.classList.add('in'));return}
   const show=el=>{
@@ -1034,7 +1037,7 @@ FRAMES.forEach(f=>{if(f.src){
     if(el===fan)[...fan.children].forEach(k=>k.style.setProperty('--sx',(fan.clientWidth/2-(k.offsetLeft+k.offsetWidth/2))+'px'));
     el.classList.add('in');
     // setelah animasi selesai, lepas class-nya biar nggak nahan transition lain (hover dll)
-    if(el!==fan)setTimeout(()=>el.classList.remove('rv','in'),1800);
+    if(el!==fan)setTimeout(()=>el.classList.remove('rv','in'),2400);
   };
   const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting)show(en.target)}),
     {threshold:.12,rootMargin:'0px 0px -4% 0px'});
