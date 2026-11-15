@@ -1048,6 +1048,14 @@ FRAMES.forEach(f=>{if(f.src){
   },{passive:true});
 })();
 
+// ===== awan: animasi geser cuma jalan pas awannya kelihatan di layar (class .off = pause, hemat GPU/CPU) =====
+(function(){
+  const cs=document.querySelectorAll('.clouds');
+  if(!cs.length||!('IntersectionObserver' in window))return;
+  const io=new IntersectionObserver(es=>es.forEach(en=>en.target.classList.toggle('off',!en.isIntersecting)));
+  cs.forEach(c=>io.observe(c));
+})();
+
 // ===== scroll mouse wheel dibikin halus (inertia). cuma jalan buat mouse wheel di desktop; trackpad/HP/keyboard/scrollbar tetap native =====
 (function(){
   const mq=q=>window.matchMedia&&matchMedia(q).matches;

@@ -224,9 +224,10 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit
 .lw{display:block;width:18px;height:var(--h);border-radius:999px;background:currentColor}
 
 /* library: fan kartu frame (nyusun kayak kartu agak numpuk, miring bertahap) */
-.lib{background:var(--bg);text-align:center;padding:clamp(60px,7vw,96px) 20px clamp(56px,6vw,84px);overflow:hidden}
+.lib{position:relative;isolation:isolate;background:var(--bg);text-align:center;padding:clamp(60px,7vw,96px) 20px clamp(56px,6vw,84px);overflow:hidden}
 .lib h2{font-size:clamp(2rem,5.4vw,4rem);font-weight:500;letter-spacing:-.04em;line-height:1.1;max-width:820px;margin:0 auto;display:flex;flex-wrap:wrap;gap:0 .22em;justify-content:center;align-items:center}
-.lib .mini2{display:inline-block;width:.62em;height:.95em;border-radius:0;background:#111;box-shadow:0 4px 12px rgba(0,0,0,.25);transform:rotate(6deg)}
+/* mini frame Ticket di judul (gantikan kotak hitam): rasio PNG 1616x709, 2 bolongan foto diposisikan lewat % di index.html. drop-shadow (bukan box-shadow) biar ngikutin bentuk tiket */
+.lib .mini2{position:relative;flex:none;display:block;width:1.82em;height:.8em;--g:linear-gradient(160deg,#e5e5e5,#9ca3af);transform:rotate(6deg);filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
 .fan{--h:clamp(220px,28vw,340px);position:relative;display:flex;justify-content:center;align-items:center;margin:clamp(26px,3.5vw,44px) auto clamp(20px,3vw,36px);padding:30px 0 30px;user-select:none}
 .fk{flex:none;position:relative;margin-left:calc(var(--h)*-.12);border-radius:14px;overflow:visible;background:#fff;box-shadow:0 22px 40px rgba(0,0,0,.2);transform:translate(var(--x,0px),var(--y,0px)) rotate(var(--r,0deg));cursor:pointer;transition:transform .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s;-webkit-tap-highlight-color:transparent}
 .fk:first-child{margin-left:0}
@@ -290,3 +291,8 @@ nav{animation:navIn .8s cubic-bezier(.2,.8,.2,1) backwards}
 .cl2{background-image:url(images/clouds-2.webp);background-position:calc(var(--ch)*.7) 0;opacity:.9;animation:cdrift 170s linear infinite}
 @keyframes cdrift{to{translate:calc(var(--ch)*-2) 0}} /* geser tepat 1 tile (lebar tile = 2 x tinggi) = loop mulus */
 @keyframes cfade{from{opacity:0}}
+/* awan di dasar section library: layer yang sama, dibalik vertikal biar paling pekat di bawah (nempel footer) dan pudar ke atas */
+.lib .clouds{--ch:clamp(300px,38vw,540px);top:auto;bottom:0;transform:scaleY(-1)}
+/* biar ringan: di library cukup 1 layer awan, dan animasi di-pause pas awan di luar layar (class .off dipasang script.js) */
+.lib .cl2{display:none}
+.clouds.off .cl{animation-play-state:paused}
