@@ -14,7 +14,11 @@ const FRAMES=[
    t:{W:1616,H:709,ox:763,oy:152,pw:396,ph:528,gap:24,cols:2,rows:1}},
   // graffiti tag + barcode (1080x1920, bolongan foto 1026x1400). tinter:'ink' = recolor putih->bg, hitam->tinta (lihat INK_TONES)
   {id:'tag',name:'Tag',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-tag.png',tinter:'ink',blue:true,
-   t:{W:1080,H:1920,ox:27,oy:103,pw:1026,ph:1400,cols:1,rows:1}}
+   t:{W:1080,H:1920,ox:27,oy:103,pw:1026,ph:1400,cols:1,rows:1}},
+  // kartu merah bolongan oval + tanda tangan. auto:true = ukuran & bolongan foto dihitung otomatis dari PNG pas load (lihat autoFit), t di bawah cuma cadangan sebelum PNG kebaca.
+  // tinter:'uno' = recolor merah -> hitam/biru (lihat UNO_TONES). lightName/lightColor = label tone asli di picker
+  {id:'reverse',name:'UNO',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-uno.png',tinter:'uno',auto:true,bgFixed:true,blue:true,lightName:'Red',lightColor:'#9b2a24',
+   t:{W:1572,H:2294,ox:74,oy:181,pw:1384,ph:2047,cols:1,rows:1}}
 ];
 // font tanda tangan: "Other Hand" (file lokal di fonts/, lihat style.css), cadangan "Mr Dafoe" dari Google Fonts
 const SIG_FONT='"Other Hand","Mr Dafoe",cursive';
@@ -51,21 +55,40 @@ function renderL(){
   if(t)state.layout=[t.cols,t.rows];
   normSel();
 }
-const LIB=[['photrame',[1]],['white',[2]],['navy',[3,4,3,4]],['blob',[5,6,5]],['white',[7,8,9]],['black',[10,11,12]]];
-function stripHTML(f,label,ids){
+// [frame, foto, tone]. tone opsional (dark/blue) buat frame PNG yang punya recolor
+const LIB=[['photrame',[1]],['tag',[2]],['navy',[3,4,3,4]],['blob',[5,6,5]],['ticket',[7,8]],['ticket',[10,11],'dark']];
+function stripHTML(f,label,ids,tone){
   if(f.midSrc){
     const t=f.t,pc=(v,d)=>(v/d*100)+'%';
     const sl=ids.map((k,i)=>`<div class="stcw" style="--g:${f.g};left:${pc(t.ox,t.W)};top:${pc(t.oy+i*(t.ph+t.gap),t.H)};width:${pc(t.pw,t.W)};height:${pc(t.ph,t.H)}"><img src="images/lib-${k}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>`);
     return `<div class="stc" style="aspect-ratio:${t.W}/${t.H}">${sl[0]}<img class="stcb" src="${f.midSrc}" alt="" loading="lazy" decoding="async" onerror="this.remove()">${sl.slice(1).join('')}<img class="stcf" src="${f.src}" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>`;
   }
-  if(f.src)return `<div class="stc"><div class="stcw" style="--g:${f.g}"><img src="images/lib-${ids[0]}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div><img class="stcf" src="${f.src}" alt="" loading="lazy" decoding="async" onerror="this.remove()"><canvas class="stcs" width="600" height="806"></canvas></div>`;
+  if(f.src){
+    const t=f.t,pc=(v,d)=>(v/d*100)+'%',n=t.cols*t.rows,gp=t.gap||0;
+    const sl=Array.from({length:n},(_,i)=>{
+      const x=t.ox+(i%t.cols)*(t.pw+gp),y=t.oy+Math.floor(i/t.cols)*(t.ph+gp),k=ids[i]!=null?ids[i]:ids[0];
+      return `<div class="stcw" style="--g:${f.g};left:${pc(x,t.W)};top:${pc(y,t.H)};width:${pc(t.pw,t.W)};height:${pc(t.ph,t.H)}"><img src="images/lib-${k}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>`;
+    }).join('');
+    const fr=tone&&tone!=='light'?`<canvas class="stcf" data-f="${f.id}" data-tone="${tone}"></canvas>`:`<img class="stcf" src="${f.src}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`;
+    return `<div class="stc" style="aspect-ratio:${t.W}/${t.H}">${sl}${fr}${f.id==='photrame'?'<canvas class="stcs" width="600" height="806"></canvas>':''}</div>`;
+  }
   const n=ids.length;
   const w=ids.map(k=>`<div class="stw${n===1?' por':''}" style="--g:${f.g}"><img src="images/lib-${k}.webp" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('ph')" onerror="this.remove()"></div>`).join('');
   return `<div class="st" style="background:${f.bg};color:${f.fg}">${w}${label?'<small>Photrame</small>':''}</div>`;
 }
 
-$('fcw').insertAdjacentHTML('beforeend',LIB.map(([id,ids],i)=>`<div class="fc p${i}" aria-hidden="true">${stripHTML(FRAMES.find(f=>f.id===id),true,ids)}</div>`).join(''));
+$('fcw').insertAdjacentHTML('beforeend',LIB.map(([id,ids,tone],i)=>`<div class="fc p${i}" aria-hidden="true">${stripHTML(FRAMES.find(f=>f.id===id),true,ids,tone)}</div>`).join(''));
 
+// frame PNG yang di library pakai tone dark/blue: gambar versi recolor-nya ke canvas (nunggu PNG frame kebaca)
+function drawLibTints(){
+  document.querySelectorAll('canvas.stcf[data-f]').forEach(cv=>{
+    const f=FRAMES.find(x=>x.id===cv.dataset.f);
+    if(!f||!f.img||!f.img.complete||!f.img.naturalWidth)return;
+    const src=tinted(f,'tint',f.img,cv.dataset.tone);
+    cv.width=f.img.naturalWidth;cv.height=f.img.naturalHeight;
+    cv.getContext('2d').drawImage(src,0,0);
+  });
+}
 function drawLibSig(){
   document.querySelectorAll('.stcs').forEach(cv=>{
     const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
@@ -77,7 +100,7 @@ drawLibSig();
 function renderTone(){
   $('toneCard').hidden=!state.frame.src;
   const el=$('tonePicker');
-  const tones=[['light','White','#ffffff'],['dark','Black','#111111']];
+  const tones=[['light',state.frame.lightName||'White',state.frame.lightColor||'#ffffff'],['dark','Black','#111111']];
   if(state.frame.blue)tones.push(['blue','Blue','#3751ff']);
   el.innerHTML=tones.map(([id,n,c])=>`<button class="chip2 ${state.tone===id?'sel':''}" data-tone="${id}"><i style="background:${c}"></i>${n}</button>`).join('');
 }
@@ -279,10 +302,72 @@ function tintInk(img,mode){
   x.putImageData(id,0,0);
   return c;
 }
-const TINTERS={ticket:tintTicket,ink:tintInk};
+// ---- frame kartu merah (reverse) ----
+// PNG: kartu merah + panah putih berbingkai hitam + tanda tangan hitam, bolongan foto oval (transparan), area luar kartu transparan/putih.
+// Per piksel: bagian merah -> warna kartu (card), sisanya (putih..hitam) -> gradasi W (putih asli) .. K (hitam asli).
+// Tepi luar kartu selalu putih (di semua tone, opaque biar foto nggak bocor di sudut kartu). Dark: kartu hitam, panah putih + sisi/garis panah & tanda tangan biru. Blue: kartu biru, panah putih + garis hitam & tanda tangan hitam (kayak aslinya).
+const UNO_TONES={
+  dark:{card:[24,24,24],k:[55,81,255],w:[255,255,255]},
+  blue:{card:[55,81,255],k:[17,17,17],w:[255,255,255]}
+};
+// baca PNG sekali: cari bolongan foto (piksel transparan/putih di dalam kartu, bukan area luar), bbox kartu, warna merah kartu
+function autoFit(f){
+  try{
+    const im=f.img,W=im.naturalWidth,H=im.naturalHeight,N=W*H;
+    const c=document.createElement('canvas');c.width=W;c.height=H;
+    const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0);
+    const d=x.getImageData(0,0,W,H).data;
+    const light=p=>{const i=p*4;return d[i+3]<40||(d[i]>235&&d[i+1]>235&&d[i+2]>235)};
+    // area luar kartu = flood fill dari 4 pojok lewat piksel terang
+    const mar=new Uint8Array(N),st=new Int32Array(N);let sp=0;
+    for(const s of [0,W-1,(H-1)*W,N-1])if(light(s)&&!mar[s]){mar[s]=1;st[sp++]=s}
+    while(sp){
+      const p=st[--sp],px=p%W;let q;
+      if(px>0&&!mar[q=p-1]&&light(q)){mar[q]=1;st[sp++]=q}
+      if(px<W-1&&!mar[q=p+1]&&light(q)){mar[q]=1;st[sp++]=q}
+      if(p>=W&&!mar[q=p-W]&&light(q)){mar[q]=1;st[sp++]=q}
+      if(p<N-W&&!mar[q=p+W]&&light(q)){mar[q]=1;st[sp++]=q}
+    }
+    let hx0=W,hy0=H,hx1=-1,hy1=-1,cx0=W,cy0=H,cx1=-1,cy1=-1;
+    for(let y=0;y<H;y++)for(let xx=0;xx<W;xx++){
+      const p=y*W+xx;if(mar[p])continue;
+      const i=p*4;
+      if(light(p)){if(xx<hx0)hx0=xx;if(xx>hx1)hx1=xx;if(y<hy0)hy0=y;if(y>hy1)hy1=y}
+      else if(d[i+3]>200&&d[i]-Math.max(d[i+1],d[i+2])>40){if(xx<cx0)cx0=xx;if(xx>cx1)cx1=xx;if(y<cy0)cy0=y;if(y>cy1)cy1=y}
+    }
+    if(hx1<0||cx1<0)return;
+    // warna merah kartu: ambil dari sisi kiri tengah kartu (jauh dari bolongan & tanda tangan)
+    let card=[154,42,36];
+    const sx=Math.round(cx0+(cx1-cx0)*.03),sy=Math.round((cy0+cy1)/2),si=(sy*W+sx)*4;
+    if(d[si+3]>200&&d[si]-Math.max(d[si+1],d[si+2])>40)card=[d[si],d[si+1],d[si+2]];
+    // bolongan foto = bbox bolongan + 3px biar nggak ada celah di tepi oval, tapi nggak boleh keluar dari kartu
+    const pad=3,x0=Math.max(cx0,hx0-pad),y0=Math.max(cy0,hy0-pad),x1=Math.min(cx1+1,hx1+1+pad),y1=Math.min(cy1+1,hy1+1+pad);
+    f.t={W,H,ox:x0,oy:y0,pw:x1-x0,ph:y1-y0,cols:1,rows:1};
+    f.mar=mar;f.card=card;f.fitted=true;
+  }catch(e){}
+}
+function tintUno(img,mode,f){
+  const T=UNO_TONES[mode];if(!T||!f||!f.mar)return;
+  const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
+  const x=c.getContext('2d');x.drawImage(img,0,0);
+  let id;try{id=x.getImageData(0,0,c.width,c.height)}catch(e){return null}
+  const d=id.data,mar=f.mar,C=f.card,den=Math.max(1,C[0]-Math.max(C[1],C[2])),K=T.k,Wt=T.w,cd=T.card;
+  for(let p=0,i=0;i<d.length;p++,i+=4){
+    if(mar[p]){d[i]=d[i+1]=d[i+2]=d[i+3]=255;continue}
+    if(d[i+3]===0)continue;
+    let w=(d[i]-Math.max(d[i+1],d[i+2]))/den;w=w<0?0:w>1?1:w;
+    let l=0;
+    if(w<.999){l=(d[i+1]-w*C[1])/(1-w)/255;l=l<0?0:l>1?1:l}
+    const k=1-w;
+    d[i]=w*cd[0]+k*(K[0]+(Wt[0]-K[0])*l);d[i+1]=w*cd[1]+k*(K[1]+(Wt[1]-K[1])*l);d[i+2]=w*cd[2]+k*(K[2]+(Wt[2]-K[2])*l);
+  }
+  x.putImageData(id,0,0);
+  return c;
+}
+const TINTERS={ticket:tintTicket,ink:tintInk,uno:tintUno};
 function tinted(f,key,img,mode){
   const c=f[key]||(f[key]={});
-  if(c[mode]===undefined)c[mode]=(TINTERS[f.tinter]||tintFrame)(img,mode);
+  if(c[mode]===undefined)c[mode]=(TINTERS[f.tinter]||tintFrame)(img,mode,f);
   return c[mode]||img;
 }
 function frameImg(f){
@@ -295,7 +380,7 @@ function drawStrip(cv,S){
   cv.width=W;cv.height=H;
   const ctx=cv.getContext('2d'),f=state.frame;
   const tone=f.src?state.tone:'light',dark=tone==='dark',blue=tone==='blue';
-  ctx.fillStyle=blue?'#3751ff':dark?'#111111':f.bg;ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=f.bgFixed?f.bg:blue?'#3751ff':dark?'#111111':f.bg;ctx.fillRect(0,0,W,H);
   for(let i=0;i<n;i++){
     const x=ox+(i%cols)*(pw+gap),y=oy+Math.floor(i/cols)*(ph+gap);
     ctx.save();ctx.beginPath();ctx.rect(x,y,pw,ph);ctx.clip();
@@ -867,7 +952,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{scheduleR
 // load gambar frame PNG + font tanda tangan, lalu render ulang
 FRAMES.forEach(f=>{if(f.src){
   f.img=new Image();
-  f.img.onload=()=>scheduleRender();
+  f.img.onload=()=>{if(f.auto){autoFit(f);if(state.frame===f)renderL()}scheduleRender();drawLibTints()};
   f.img.onerror=()=>{msg.textContent='Frame image not found: '+f.src+' (put the PNG in the images folder, then hard refresh with Ctrl+F5).'};
   f.img.src=f.src;
   if(f.midSrc){f.mid=new Image();f.mid.onload=()=>scheduleRender();f.mid.src=f.midSrc}

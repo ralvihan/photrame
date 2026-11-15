@@ -241,3 +241,8 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit
 .adj[hidden]{display:none}
 .grp+.grp{margin-top:14px}
 .lw{display:block;width:18px;height:var(--h);border-radius:999px;background:currentColor}
+/* library: frame ticket (landscape) di dua strip paling bawah */
+.fc.p4,.fc.p5{width:calc(var(--cw)*1.9);bottom:calc(var(--cw)*-.2)}
+.fc.p4{left:14%}
+.fc.p5{right:14%}
+@media (max-width:640px){.fc.p4{left:3%}.fc.p5{right:3%}}
