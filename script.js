@@ -104,10 +104,47 @@ $('fcw').addEventListener('keydown',e=>{
   const k=e.target.closest('.fk');if(k){e.preventDefault();pullCard(k)}
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.fk'))pullCard(null)});
+// tanda tangan "Jihyo" digambar manual pakai titik-titik kontrol (bukan font), ketebalan garis bervariasi biar kayak pulpen beneran
+function drawLibSignature(ctx,col){
+  // tiap stroke = deretan titik [x,y] relatif ke garis dasar (0,0). dilewati pakai kurva Catmull-Rom
+  const STROKES=[
+    // J besar (loop bawah) -> i -> h -> y (ekor loop) -> o -> ekor panjang
+    [[74,-80],[68,-62],[62,-32],[56,-2],[48,22],[32,34],[14,28],[8,14],[18,2],[38,-6],[58,-8],
+     [68,-22],[74,-34],[76,-14],[80,-2],[88,-10],[94,-40],[100,-72],[104,-82],[102,-60],[98,-28],[96,-4],
+     [102,-20],[112,-32],[124,-26],[128,-10],[128,-2],[136,-10],[140,-30],[140,-8],[146,-1],[156,-14],[162,-32],
+     [162,-8],[156,18],[142,34],[126,38],[118,28],[126,14],[142,0],[158,-6],
+     [168,-22],[180,-30],[192,-20],[190,-6],[178,-2],[172,-12],[184,-26],[206,-28],[232,-36]],
+    // titik i (dibuat jadi coretan pendek miring)
+    [[69,-48],[75,-52],[81,-54]],
+    // garis bawah / swoosh
+    [[18,50],[70,44],[130,42],[190,34],[246,18]]
+  ];
+  const cr=(p0,p1,p2,p3,t)=>{const t2=t*t,t3=t2*t;return[
+    .5*((2*p1[0])+(-p0[0]+p2[0])*t+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3),
+    .5*((2*p1[1])+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3)]};
+  ctx.save();
+  // posisi: pojok kiri atas, agak keluar ke bingkai kiri, miring ke atas (sama kayak tanda tangan lama)
+  ctx.translate(30,126);ctx.rotate(-.14);ctx.scale(.82,.82);
+  ctx.strokeStyle=ctx.fillStyle=col||'#111111';ctx.lineCap='round';ctx.lineJoin='round';
+  STROKES.forEach((pts,si)=>{
+    const P=[pts[0],...pts,pts[pts.length-1]],S=[];
+    for(let i=1;i<P.length-2;i++)for(let k=0;k<12;k++)S.push(cr(P[i-1],P[i],P[i+1],P[i+2],k/12));
+    S.push(pts[pts.length-1]);
+    const n=S.length,thin=si===2?.55:1;
+    for(let i=1;i<n;i++){
+      const u=i/n,dx=S[i][0]-S[i-1][0],dy=S[i][1]-S[i-1][1],sp=Math.hypot(dx,dy);
+      // pulpen: ujung awal/akhir tipis, tengah tebal, gerakan cepat jadi lebih tipis
+      const taper=Math.pow(Math.sin(Math.PI*Math.min(1,Math.max(.04,u))),.5);
+      const w=(1.1+2.6*taper)*(1.25-Math.min(.5,sp*.12))*thin;
+      ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(S[i-1][0],S[i-1][1]);ctx.lineTo(S[i][0],S[i][1]);ctx.stroke();
+    }
+  });
+  ctx.restore();
+}
 function drawLibSig(){
   document.querySelectorAll('.stcs').forEach(cv=>{
     const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
-    drawSig(ctx,1,36,36,528,'messi');
+    drawLibSignature(ctx,'#111111');
   });
 }
 drawLibSig();
