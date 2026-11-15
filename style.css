@@ -9,16 +9,18 @@ section{scroll-margin-top:0}
 h2{font-size:clamp(2rem,5vw,3rem);letter-spacing:-.035em;line-height:1.05;text-align:center}
 .lead{margin:14px auto 0;max-width:520px;text-align:center;color:#6b7280;font-size:1.05rem;line-height:1.5}
 
-nav{position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);left:50%;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:4px;padding:8px 8px 8px 18px;border-radius:999px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.1);border:1px solid #e5e7eb;white-space:nowrap}
-.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;letter-spacing:-.02em;margin-right:14px;color:#111;text-decoration:none}
+/* navbar nempel di tepi atas (gaya dynamic island): cuma sudut bawah yang bulat, sisi kiri-kanan atas melengkung ke dalam (::before/::after) biar nyambung mulus ke tepi layar */
+nav{--r:18px;position:fixed;top:env(safe-area-inset-top,0px);left:50%;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:4px;padding:8px 12px 10px 20px;border-radius:0 0 26px 26px;background:#111;filter:drop-shadow(0 6px 14px rgba(0,0,0,.18));white-space:nowrap}
+nav::before,nav::after{content:"";position:absolute;top:0;width:var(--r);height:var(--r);pointer-events:none}
+nav::before{right:100%;background:radial-gradient(circle at 0 100%,transparent calc(var(--r) - .5px),#111 var(--r))}
+nav::after{left:100%;background:radial-gradient(circle at 100% 100%,transparent calc(var(--r) - .5px),#111 var(--r))}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;letter-spacing:-.02em;margin-right:14px;color:#fff;text-decoration:none}
 .logo svg{width:22px;height:22px;flex:none}
-nav a.l{color:#333;text-decoration:none;font-size:15px;font-weight:500;padding:8px 12px;border-radius:999px;transition:background .2s}
-nav a.l:hover{background:#f0f2f5}
-nav a.cta{margin-left:6px;background:#111;color:#fff;font-weight:600;font-size:15px;padding:9px 18px;border-radius:999px;text-decoration:none;transition:transform .2s}
-nav a.cta:hover{transform:scale(1.05)}
+nav a.l{color:#e5e7eb;text-decoration:none;font-size:15px;font-weight:500;padding:8px 12px;border-radius:999px;transition:background .2s}
+nav a.l:hover{background:rgba(255,255,255,.12)}
 
 .btn{margin-top:28px;display:inline-flex;align-items:center;justify-content:center;background:#111;color:#fff;border:0;cursor:pointer;font-family:inherit;text-decoration:none;font-weight:600;font-size:17px;letter-spacing:-.01em;padding:15px 30px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.18);transition:transform .2s,opacity .2s}
-.btn:hover{transform:translateY(-2px)}
+@media (hover:hover){.btn:hover{transform:translateY(-2px)}}
 .btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
 .btn.ghost{background:#fff;color:#111;border:1px solid #e5e7eb;box-shadow:none}
 .btn.sm{margin-top:0;padding:8px 14px;font-size:13px;box-shadow:none}
@@ -229,10 +231,10 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit
 /* mini frame Ticket di judul (gantikan kotak hitam): rasio PNG 1616x709, 2 bolongan foto diposisikan lewat % di index.html. drop-shadow (bukan box-shadow) biar ngikutin bentuk tiket */
 .lib .mini2{position:relative;flex:none;display:block;width:1.82em;height:.8em;--g:linear-gradient(160deg,#e5e5e5,#9ca3af);transform:rotate(6deg);filter:drop-shadow(0 4px 10px rgba(0,0,0,.25))}
 .fan{--h:clamp(220px,28vw,340px);position:relative;display:flex;justify-content:center;align-items:center;margin:clamp(26px,3.5vw,44px) auto clamp(20px,3vw,36px);padding:30px 0 30px;user-select:none}
-.fk{flex:none;position:relative;margin-left:calc(var(--h)*-.12);border-radius:14px;overflow:visible;background:#fff;box-shadow:0 22px 40px rgba(0,0,0,.2);transform:translate(var(--x,0px),var(--y,0px)) rotate(var(--r,0deg));cursor:pointer;transition:transform .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s;-webkit-tap-highlight-color:transparent}
+.fk{flex:none;position:relative;margin-left:calc(var(--h)*-.12);border-radius:0;overflow:visible;background:#fff;box-shadow:0 22px 40px rgba(0,0,0,.2);transform:translate(var(--x,0px),var(--y,0px)) rotate(var(--r,0deg));cursor:pointer;transition:transform .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s;-webkit-tap-highlight-color:transparent}
 .fk:first-child{margin-left:0}
-/* overflow .fk dibuka biar bubble chat bisa keluar kartu; sudut kartu dipotong di isinya */
-.fk>.st,.fk>.stc{border-radius:inherit;overflow:hidden}
+/* overflow .fk dibuka biar bubble chat bisa keluar kartu. sudut sengaja nggak dibulatin: bentuk kartu murni ngikutin PNG frame */
+.fk>.st,.fk>.stc{border-radius:0;overflow:hidden}
 /* bubble chat di kartu library (UNO & Photrame) */
 .bub{position:absolute;z-index:5;padding:6px 13px;border-radius:999px;background:var(--bc);color:#fff;font:600 clamp(11px,1.25vw,14px)/1.2 Inter,system-ui,sans-serif;letter-spacing:-.01em;white-space:nowrap;box-shadow:0 6px 14px rgba(0,0,0,.18);transform:rotate(calc(var(--r,0deg)*-1));transform-origin:12% 100%;pointer-events:none;opacity:0}
 .bub::after{content:"";position:absolute;left:14px;bottom:-5px;border:6px solid transparent;border-top-color:var(--bc);border-bottom:0;border-left-width:3px;border-right-width:9px}
@@ -302,3 +304,12 @@ canvas,video{-webkit-touch-callout:none}
 /* HP: canvas & video juga ditembus (cuma #sigPad yang butuh disentuh buat gambar tanda tangan). interaksi booth tetap jalan karena nangkepnya di elemen pembungkus (.cell / .slot) */
 canvas:not(#sigPad),video{pointer-events:none}
 body{-webkit-touch-callout:none}
+
+/* ===== efek tekan (button "mendem" pas diklik/ditap, lepas = mantul dikit) ===== */
+button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn,.chip2,.pk,.camToggle,.tmrBtn,.slot .rt,.slot .dl,.swc,.cx,.sgx,nav a.l{transition:transform .16s cubic-bezier(.3,.7,.4,1.5),box-shadow .16s,background .2s,opacity .2s,color .2s}
+.btn:active:not(:disabled){transform:translateY(1px) scale(.95);box-shadow:0 3px 10px rgba(0,0,0,.2);transition-duration:.07s}
+.btn.sm:active:not(:disabled),.btn.ghost:active:not(:disabled){box-shadow:none}
+nav a.l:active,.chip2:active,.camToggle:active:not(:disabled),.tmrBtn:active{transform:scale(.94);transition-duration:.07s}
+.pk:active,.swc:active,.cx:active,.sgx:active{transform:scale(.88);transition-duration:.07s}
+.slot .rt:active:not(:disabled),.slot .dl:active{transform:scale(.92);transition-duration:.07s}
