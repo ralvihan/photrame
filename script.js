@@ -180,30 +180,101 @@ function pickFrame(id,go){
   if(go)navTo('/booth',true);
 }
 
+// ===== card Edit: tab Filters/Adjust, strip thumbnail filter (pakai foto yang lagi aktif), slider dua arah =====
+const EDIT_KEYS=['bright','contrast','sat','warm','fade','vig'];
+const FZERO={bright:0,contrast:0,sat:0,warm:0,fade:0,vig:0};
+const fstrip=$('filters'),fwrap=$('fstripw'),tabs=[...document.querySelectorAll('#editTabs .tab')];
+let thumbRef=null,thumbKey='';
 function renderFilters(){
-  $('filters').innerHTML=FILTERS.map(([id,n])=>`<button class="chip2 ${state.edit.filter===id?'sel':''}" data-f="${id}">${n}</button>`).join('');
+  if(!fstrip.children.length){
+    fstrip.innerHTML=FILTERS.map(([id,n])=>`<button type="button" class="fth" data-f="${id}"><canvas width="152" height="152"></canvas><span>${n}</span></button>`).join('');
+  }
+  fstrip.querySelectorAll('.fth').forEach(b=>{const on=b.dataset.f===state.edit.filter;b.classList.toggle('sel',on);b.setAttribute('aria-pressed',on)});
+  syncTabs();
 }
-$('filters').addEventListener('click',e=>{
-  const c=e.target.closest('.chip2');if(!c)return;
+// foto buat thumbnail: yang lagi aktif di preview, kalau nggak ada pakai foto pertama yang terisi
+function thumbShot(){
+  const ai=state.active,si=ai!=null?state.sel[ai]:null;
+  return (si!=null&&state.shots[si])||state.shots.find(Boolean)||null;
+}
+// thumbnail cuma digambar ulang kalau fotonya ganti (filter murni, slider diabaikan)
+function updateFilterThumbs(){
+  const s=thumbShot();
+  if(s){
+    const key=s.width+'x'+s.height;
+    if(s!==thumbRef||key!==thumbKey){
+      thumbRef=s;thumbKey=key;
+      fstrip.querySelectorAll('.fth').forEach(b=>{
+        const c=b.firstChild,x=c.getContext('2d');
+        x.drawImage(processed(s,c.width,c.height,null,{...FZERO,filter:b.dataset.f}),0,0);
+      });
+    }
+  }
+  fadeSync();
+}
+function fadeSync(){
+  if(fstrip.offsetParent===null)return;
+  fwrap.classList.toggle('fl',fstrip.scrollLeft>2);
+  fwrap.classList.toggle('fr',fstrip.scrollLeft+fstrip.clientWidth<fstrip.scrollWidth-2);
+}
+fstrip.addEventListener('scroll',fadeSync,{passive:true});
+addEventListener('resize',fadeSync);
+// geser pakai mouse (drag); di HP sudah bisa swipe native
+let dragX=null,dragSL=0,dragged=false;
+fstrip.addEventListener('pointerdown',e=>{dragged=false;if(e.pointerType!=='mouse'||e.button!==0)return;dragX=e.clientX;dragSL=fstrip.scrollLeft});
+addEventListener('pointermove',e=>{
+  if(dragX==null)return;
+  const dx=e.clientX-dragX;
+  if(!dragged&&Math.abs(dx)>5){dragged=true;fstrip.classList.add('drag')}
+  if(dragged)fstrip.scrollLeft=dragSL-dx;
+});
+addEventListener('pointerup',()=>{if(dragX==null)return;dragX=null;fstrip.classList.remove('drag')});
+fstrip.addEventListener('click',e=>{
+  if(dragged){dragged=false;return}
+  const c=e.target.closest('.fth');if(!c)return;
   state.edit.filter=c.dataset.f;renderFilters();scheduleRender();
 });
-const EDIT_KEYS=['bright','contrast','sat','warm','fade','vig'];
-EDIT_KEYS.forEach(k=>$(k).addEventListener('input',e=>{state.edit[k]=+e.target.value;scheduleRender()}));
+function centerSel(){const s=fstrip.querySelector('.fth.sel');if(s)fstrip.scrollLeft=s.offsetLeft-(fstrip.clientWidth-s.offsetWidth)/2}
+function showTab(t){
+  tabs.forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('sel',on);b.setAttribute('aria-selected',on)});
+  $('tpFilters').hidden=t!=='filters';$('tpAdjust').hidden=t!=='adjust';
+  if(t==='filters'){centerSel();fadeSync()}
+}
+tabs.forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.t)));
+// titik kuning di tab = ada yang diubah di tab itu (biar kelihatan walau tabnya lagi ketutup)
+function syncTabs(){
+  const e=state.edit;
+  tabs[0].classList.toggle('mod',e.filter!=='none');
+  tabs[1].classList.toggle('mod',EDIT_KEYS.some(k=>e[k]));
+}
+// slider: isi hitam mulai dari titik 0 (dua arah untuk yang bisa minus), angka di kanan, klik angka / klik dua kali = reset
+function syncRange(k){
+  const el=$(k),min=+el.min,max=+el.max,v=+el.value,p=(v-min)/(max-min),z=(0-min)/(max-min);
+  const f=t=>t<=0?'0%':t>=1?'100%':`calc(9px + (100% - 18px)*${t})`;
+  el.style.setProperty('--pa',f(Math.min(p,z)));el.style.setProperty('--pb',f(Math.max(p,z)));
+  const o=$(k+'V');o.textContent=(min<0&&v>0?'+':'')+v;o.classList.toggle('zero',v===0);
+}
+EDIT_KEYS.forEach(k=>{
+  const el=$(k),rs=()=>{el.value=0;state.edit[k]=0;syncRange(k);syncTabs();scheduleRender()};
+  el.addEventListener('input',()=>{state.edit[k]=+el.value;syncRange(k);syncTabs();scheduleRender()});
+  el.addEventListener('dblclick',rs);$(k+'V').addEventListener('click',rs);
+  syncRange(k);
+});
 $('resetEdit').addEventListener('click',()=>{
-  state.edit={filter:'none',bright:0,contrast:0,sat:0,warm:0,fade:0,vig:0};
-  EDIT_KEYS.forEach(k=>$(k).value=0);
-  renderFilters();scheduleRender();
+  state.edit={filter:'none',...FZERO};
+  EDIT_KEYS.forEach(k=>{$(k).value=0;syncRange(k)});
+  renderFilters();fstrip.scrollTo({left:0,behavior:'smooth'});scheduleRender();
 });
 
 function getAdj(i){const a=state.adj[i];return a&&a.s===state.sel[i]?a:null}
 function dropAdj(shot){state.adj=state.adj.map(a=>a&&a.s===shot?null:a)}
-function processed(src,w,h,adj){
+function processed(src,w,h,adj,ov){
   const c=document.createElement('canvas');c.width=w;c.height=h;
   const x=c.getContext('2d',{willReadFrequently:true});
   const z=adj?adj.z:1,px=adj?adj.x:0,py=adj?adj.y:0;
   const sc=Math.max(w/src.width,h/src.height)*z,sw=w/sc,sh=h/sc;
   x.drawImage(src,(src.width-sw)*(1+px)/2,(src.height-sh)*(1+py)/2,sw,sh,0,0,w,h);
-  const {filter,bright,contrast,sat,warm,fade,vig}=state.edit;
+  const {filter,bright,contrast,sat,warm,fade,vig}=ov||state.edit;
   if(filter==='none'&&!bright&&!contrast&&!sat&&!warm&&!fade&&!vig)return c;
   const img=x.getImageData(0,0,w,h),d=img.data;
   const k=contrast*2.55,cf=(259*(k+255))/(255*(259-k)),add=bright*2.55;
@@ -526,7 +597,7 @@ clearBtn.addEventListener('click',()=>{state.shots=state.shots.map(()=>null);sta
 let raf=0;
 function scheduleRender(){
   cancelAnimationFrame(raf);
-  raf=requestAnimationFrame(()=>{drawStrip(out,1);renderCells();refreshSlots();updateUI()});
+  raf=requestAnimationFrame(()=>{drawStrip(out,1);renderCells();refreshSlots();updateUI();updateFilterThumbs()});
 }
 function updateUI(){
   const n=state.shots.length;

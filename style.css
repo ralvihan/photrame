@@ -341,3 +341,36 @@ nav a.l:active,.chip2:active,.camToggle:active:not(:disabled),.tmrBtn:active,.ph
 }
 /* tombol Upload photos: hitam, tulisan putih */
 #upBtn{background:#111;color:#fff;border-color:#111}
+
+/* ===== card Edit: tab Filters/Adjust ===== */
+.tabs{display:flex;gap:4px;padding:4px;background:#f1f2f4;border-radius:999px;width:fit-content;margin-bottom:16px}
+.tab{position:relative;border:0;background:transparent;font-family:inherit;font-size:14px;font-weight:600;color:#6b7280;padding:7px 20px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
+.tab.sel{background:#111;color:#fff}
+.tab.mod::after{content:"";position:absolute;top:7px;right:9px;width:6px;height:6px;border-radius:50%;background:#ffd60a}
+/* strip thumbnail filter (geser kiri-kanan, ujungnya pudar kalau masih ada yang kepotong) */
+.fstripw{margin:0 -6px}
+.fstrip{position:relative;display:flex;gap:10px;overflow-x:auto;padding:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab}
+.fstrip::-webkit-scrollbar{display:none}
+.fstrip.drag{cursor:grabbing;user-select:none}
+.fstripw.fl .fstrip{-webkit-mask-image:linear-gradient(90deg,transparent,#000 32px);mask-image:linear-gradient(90deg,transparent,#000 32px)}
+.fstripw.fr .fstrip{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent)}
+.fstripw.fl.fr .fstrip{-webkit-mask-image:linear-gradient(90deg,transparent,#000 32px,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,transparent,#000 32px,#000 calc(100% - 32px),transparent)}
+.fth{flex:none;width:76px;border:0;background:none;padding:0;font-family:inherit;font-size:12px;font-weight:600;color:#6b7280;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:color .2s}
+.fth canvas{display:block;width:76px;height:76px;border-radius:16px;background:#e5e7eb;outline:2px solid transparent;outline-offset:2px;transition:outline-color .2s,transform .16s cubic-bezier(.3,.7,.4,1.5)}
+.fth.sel{color:#111}
+.fth.sel canvas{outline-color:#111}
+.fth:active canvas{transform:scale(.95)}
+/* slider Adjust: isi hitam mulai dari titik 0 */
+.adjg{display:grid;grid-template-columns:84px 1fr 38px;align-items:center;gap:6px 12px;font-size:14px;font-weight:500;color:#444}
+.rval{border:0;background:none;font-family:inherit;font-size:13px;font-weight:600;color:#111;text-align:right;cursor:pointer;padding:2px 0;font-variant-numeric:tabular-nums}
+.rval.zero{color:#9ca3af}
+.rg{--a:0;--b:0;--pa:calc(9px + (100% - 18px)*var(--a));--pb:calc(9px + (100% - 18px)*var(--b));-webkit-appearance:none;appearance:none;width:100%;height:24px;margin:0;background:transparent;cursor:pointer}
+.rg::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:linear-gradient(90deg,#e5e7eb var(--pa),#111 var(--pa) var(--pb),#e5e7eb var(--pb))}
+.rg::-moz-range-track{height:6px;border-radius:99px;background:linear-gradient(90deg,#e5e7eb var(--pa),#111 var(--pa) var(--pb),#e5e7eb var(--pb))}
+.rg::-webkit-slider-thumb{-webkit-appearance:none;box-sizing:border-box;width:18px;height:18px;margin-top:-6px;border-radius:50%;background:#111;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2),0 2px 6px rgba(0,0,0,.25)}
+.rg::-moz-range-thumb{box-sizing:border-box;width:18px;height:18px;border-radius:50%;background:#111;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.2),0 2px 6px rgba(0,0,0,.25)}
+.rg:focus-visible{outline:none}
+.rg:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 1px rgba(0,0,0,.2),0 0 0 5px rgba(17,17,17,.2)}
+.rg:focus-visible::-moz-range-thumb{box-shadow:0 0 0 1px rgba(0,0,0,.2),0 0 0 5px rgba(17,17,17,.2)}
+/* strip filter panjang: kolom grid & card jangan ikut melebar (min-width:auto bawaan grid/flex) */
+.panel>*,.col,.col>.card{min-width:0}
