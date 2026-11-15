@@ -129,21 +129,6 @@ select,input[type=text]{font-family:inherit;font-size:13px;padding:6px 10px;bord
 .chip.fill{flex:1;height:.62em}
 .chip.w2{width:1.9em;height:.62em}
 
-.lib{position:relative;background:var(--bg);height:clamp(640px,80vw,880px);display:grid;place-items:center}
-.fcs{position:absolute;inset:-700px 0 0 0;padding-top:700px;box-sizing:border-box;overflow:hidden;pointer-events:none;z-index:1}
-.fcw{position:relative;width:min(1200px,100%);height:100%;margin:0 auto}
-.libc{position:relative;z-index:2;text-align:center;max-width:min(560px,62vw)}
-.libc h2{font-size:clamp(1.9rem,5vw,3.6rem);font-weight:500;letter-spacing:-.04em;line-height:1.12;display:flex;flex-wrap:wrap;gap:0 .22em;justify-content:center;align-items:center}
-.libc .mini2{display:inline-block;width:.62em;height:.95em;border-radius:0;background:#111;box-shadow:0 4px 12px rgba(0,0,0,.25);transform:rotate(6deg)}
-.libc p{margin-top:16px;color:#9ca3af;font-size:15px}
-.libc .btn{margin-top:22px;padding:11px 22px;font-size:15px;box-shadow:none}
-.fc{--cw:clamp(96px,17vw,180px);pointer-events:none;user-select:none;position:absolute;width:var(--cw);transform:rotate(var(--r));z-index:1;filter:drop-shadow(0 18px 24px rgba(0,0,0,.18))}
-.fc.p0{left:22%;top:calc(var(--cw)*-.3);--r:-4deg}
-.fc.p1{right:22%;top:calc(var(--cw)*-.3);--r:4deg}
-.fc.p2{left:3%;top:22%;--r:-4deg}
-.fc.p3{right:3%;top:22%;--r:4deg}
-.fc.p4{left:22%;bottom:calc(var(--cw)*-1.3);--r:-4deg}
-.fc.p5{right:22%;bottom:calc(var(--cw)*-1.3);--r:4deg}
 
 .st{width:100%;padding:8% 8% 14%;border-radius:0;display:flex;flex-direction:column;gap:5%}
 .stw.por{aspect-ratio:4/5}
@@ -180,9 +165,6 @@ nav{padding-left:14px}
 nav a.l.h{display:none}
 .logo{margin-right:6px}
 #booth{padding:50px 14px 80px}
-.lib{box-sizing:border-box;height:780px;padding-top:380px}
-.fc.p0,.fc.p4{left:4%}
-.fc.p1,.fc.p5{right:4%}
 .hero{padding-bottom:90px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -218,7 +200,6 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit
 .stcf{position:absolute;inset:0;width:100%;height:100%;display:block}
 .stcs{position:absolute;inset:0;width:100%;height:100%;display:block}
 .stcb{position:absolute;inset:0;width:100%;height:100%;display:block}
-.fc.p3{width:calc(var(--cw)*1.35)}
 .cx{left:auto;right:8px;top:8px;transform:none;width:36px;height:36px}
 .cell.act{touch-action:none;cursor:move}
 .adj{display:flex;align-items:center;gap:12px;margin-top:14px;font-size:13px;color:var(--gray-500)}
@@ -241,8 +222,18 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none;-webkit
 .adj[hidden]{display:none}
 .grp+.grp{margin-top:14px}
 .lw{display:block;width:18px;height:var(--h);border-radius:999px;background:currentColor}
-/* library: frame ticket (landscape) di dua strip paling bawah */
-.fc.p4,.fc.p5{width:calc(var(--cw)*1.9);bottom:calc(var(--cw)*-.2)}
-.fc.p4{left:14%}
-.fc.p5{right:14%}
-@media (max-width:640px){.fc.p4{left:3%}.fc.p5{right:3%}}
+
+/* library: fan kartu frame (nyusun kayak kartu agak numpuk, miring bertahap) */
+.lib{background:var(--bg);text-align:center;padding:clamp(90px,11vw,140px) 20px clamp(90px,10vw,130px);overflow:hidden}
+.lib h2{font-size:clamp(2rem,5.4vw,4rem);font-weight:500;letter-spacing:-.04em;line-height:1.1;max-width:820px;margin:0 auto;display:flex;flex-wrap:wrap;gap:0 .22em;justify-content:center;align-items:center}
+.lib .mini2{display:inline-block;width:.62em;height:.95em;border-radius:0;background:#111;box-shadow:0 4px 12px rgba(0,0,0,.25);transform:rotate(6deg)}
+.fan{--h:clamp(220px,28vw,340px);position:relative;display:flex;justify-content:center;align-items:center;margin:clamp(50px,7vw,90px) auto clamp(44px,6vw,70px);padding:30px 0 44px;pointer-events:none;user-select:none}
+.fk{flex:none;margin-left:calc(var(--h)*-.12);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 22px 40px rgba(0,0,0,.2);transform:translateY(var(--y,0)) rotate(var(--r,0deg))}
+.fk:first-child{margin-left:0}
+.fk.k0{--r:-9deg;--y:30px;z-index:1}
+.fk.k1{--r:-3deg;--y:8px;z-index:3}
+.fk.k2{--r:3deg;--y:8px;z-index:4}
+.fk.k3{--r:9deg;--y:30px;z-index:2}
+.libc p{color:#9ca3af;font-size:15px;max-width:420px;margin:0 auto}
+.libc .btn{margin-top:22px;padding:11px 22px;font-size:15px;box-shadow:none}
+@media (max-width:640px){.fan{--h:175px}.fk.k0{display:none}}

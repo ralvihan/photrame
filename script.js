@@ -17,7 +17,7 @@ const FRAMES=[
    t:{W:1080,H:1920,ox:27,oy:103,pw:1026,ph:1400,cols:1,rows:1}},
   // kartu merah bolongan oval + tanda tangan. auto:true = ukuran & bolongan foto dihitung otomatis dari PNG pas load (lihat autoFit), t di bawah cuma cadangan sebelum PNG kebaca.
   // tinter:'uno' = recolor merah -> hitam/biru (lihat UNO_TONES). lightName/lightColor = label tone asli di picker
-  {id:'reverse',name:'UNO',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-uno.png',tinter:'uno',auto:true,bgFixed:true,blue:true,lightName:'Red',lightColor:'#9b2a24',
+  {id:'uno',name:'UNO',bg:'#ffffff',fg:'#111111',g:'linear-gradient(160deg,#e5e5e5,#9ca3af)',src:'images/frame-uno.png',tinter:'uno',auto:true,bgFixed:true,blue:true,lightName:'Red',lightColor:'#9b2a24',
    t:{W:1572,H:2294,ox:74,oy:181,pw:1384,ph:2047,cols:1,rows:1}}
 ];
 // font tanda tangan: "Other Hand" (file lokal di fonts/, lihat style.css), cadangan "Mr Dafoe" dari Google Fonts
@@ -55,8 +55,8 @@ function renderL(){
   if(t)state.layout=[t.cols,t.rows];
   normSel();
 }
-// [frame, foto, tone]. tone opsional (dark/blue) buat frame PNG yang punya recolor
-const LIB=[['photrame',[1]],['tag',[2]],['navy',[3,4,3,4]],['blob',[5,6,5]],['ticket',[7,8]],['ticket',[10,11],'dark']];
+// kartu di fan library: [frame, foto, tone]. urutan = kiri ke kanan
+const LIB=[['blob',[5,6,5]],['uno',[3]],['tag',[2]],['photrame',[1]]];
 function stripHTML(f,label,ids,tone){
   if(f.midSrc){
     const t=f.t,pc=(v,d)=>(v/d*100)+'%';
@@ -77,7 +77,10 @@ function stripHTML(f,label,ids,tone){
   return `<div class="st" style="background:${f.bg};color:${f.fg}">${w}${label?'<small>Photrame</small>':''}</div>`;
 }
 
-$('fcw').insertAdjacentHTML('beforeend',LIB.map(([id,ids,tone],i)=>`<div class="fc p${i}" aria-hidden="true">${stripHTML(FRAMES.find(f=>f.id===id),true,ids,tone)}</div>`).join(''));
+$('fcw').insertAdjacentHTML('beforeend',LIB.map(([id,ids,tone],i)=>{
+  const f=FRAMES.find(f=>f.id===id),ar=f.t.W/f.t.H*(id==='ticket'?.5:1); // ticket lebar: tingginya setengah kartu lain
+  return `<div class="fk ${id==='ticket'?'tk':'k'+i}" style="width:calc(var(--h)*${ar.toFixed(4)})">${stripHTML(f,true,ids,tone)}</div>`;
+}).join(''));
 
 // frame PNG yang di library pakai tone dark/blue: gambar versi recolor-nya ke canvas (nunggu PNG frame kebaca)
 function drawLibTints(){
