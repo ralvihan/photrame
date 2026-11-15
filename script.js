@@ -56,7 +56,7 @@ function renderL(){
   normSel();
 }
 // kartu di fan library: [frame, foto, tone]. urutan = kiri ke kanan
-const LIB=[['blob',['hero-1','hero-4','hero-1']],['uno',['lib-5']],['tag',['hero-6']],['photrame',['hero-2']]];
+const LIB=[['blob',['hero-1','hero-4','hero-1']],['uno',['hero-5']],['tag',['hero-2']],['photrame',['hero-6']]];
 function stripHTML(f,label,ids,tone){
   if(f.midSrc){
     const t=f.t,pc=(v,d)=>(v/d*100)+'%';
