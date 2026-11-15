@@ -82,7 +82,7 @@ function stripHTML(f,label,ids,tone){
 
 $('fcw').insertAdjacentHTML('beforeend',LIB.map(([id,ids,tone],i)=>{
   const f=FRAMES.find(f=>f.id===id),ar=f.t.W/f.t.H*(id==='ticket'?.5:1); // ticket lebar: tingginya setengah kartu lain
-  return `<div class="fk k${i}" tabindex="0" role="button" aria-label="${f.name} frame" style="width:calc(var(--h)*${ar.toFixed(4)})">${stripHTML(f,true,ids,tone)}${bubHTML(id)}</div>`;
+  return `<div class="fk k${i}" tabindex="0" role="button" aria-label="${f.name} frame" style="width:calc(var(--h)*${ar.toFixed(4)});--i:${i}">${stripHTML(f,true,ids,tone)}${bubHTML(id)}</div>`;
 }).join(''));
 
 // frame PNG yang di library pakai tone dark/blue: gambar versi recolor-nya ke canvas (nunggu PNG frame kebaca)
@@ -1013,3 +1013,65 @@ FRAMES.forEach(f=>{if(f.src){
   if(f.midSrc){f.mid=new Image();f.mid.onload=()=>scheduleRender();f.mid.src=f.midSrc}
 }});
 ['"Other Hand"','"Mr Dafoe"'].forEach(n=>{if(document.fonts&&document.fonts.load)document.fonts.load('64px '+n).then(()=>{scheduleRender();drawLibSig()}).catch(()=>{})});
+// ===== animasi masuk pas scroll: IntersectionObserver, cuma nambah class .in (opacity + translate, ringan) =====
+(function(){
+  const fan=$('fcw'),fwm=document.querySelector('.fwm');
+  const groups=[
+    ['#booth h2','#booth .lead','.boothWrap>.card.cam','.boothWrap>.upRow'], // muncul berurutan
+    ['.story .r'],['.lib h2'],['.libc'],['footer .fttop'],['footer .fwm'],['footer .ftb']
+  ];
+  const els=[];
+  groups.forEach((g,gi)=>g.forEach((sel,i)=>document.querySelectorAll(sel).forEach(el=>{
+    el.classList.add('rv');if(gi===0)el.style.setProperty('--d',i);els.push(el);
+  })));
+  if(fwm)[...fwm.children].forEach((c,i)=>c.style.setProperty('--d',i));
+  const targets=fan?[...els,fan]:els;
+  if(!('IntersectionObserver' in window)){targets.forEach(el=>el.classList.add('in'));return}
+  const show=el=>{
+    if(el.classList.contains('in')||(el!==fan&&!el.classList.contains('rv')))return;
+    io.unobserve(el);
+    // kipas library: ukur jarak tiap kartu ke tengah dulu, buat posisi awal "numpuk"
+    if(el===fan)[...fan.children].forEach(k=>k.style.setProperty('--sx',(fan.clientWidth/2-(k.offsetLeft+k.offsetWidth/2))+'px'));
+    el.classList.add('in');
+    // setelah animasi selesai, lepas class-nya biar nggak nahan transition lain (hover dll)
+    if(el!==fan)setTimeout(()=>el.classList.remove('rv','in'),1800);
+  };
+  const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting)show(en.target)}),
+    {threshold:.12,rootMargin:'0px 0px -4% 0px'});
+  targets.forEach(el=>io.observe(el));
+  // jaring pengaman: kalau udah mentok di dasar halaman, semua yang tersisa (footer paling bawah dll) langsung dimunculin
+  addEventListener('scroll',()=>{
+    if(innerHeight+scrollY>=document.documentElement.scrollHeight-4)targets.forEach(show);
+  },{passive:true});
+})();
+
+// ===== scroll mouse wheel dibikin halus (inertia). cuma jalan buat mouse wheel di desktop; trackpad/HP/keyboard/scrollbar tetap native =====
+(function(){
+  const mq=q=>window.matchMedia&&matchMedia(q).matches;
+  if(mq('(prefers-reduced-motion:reduce)')||mq('(pointer:coarse)'))return;
+  let cur=0,target=0,raf=0,last=0;
+  const maxY=()=>document.documentElement.scrollHeight-innerHeight;
+  const tick=t=>{
+    const dt=last?Math.min(50,t-last):16;last=t;
+    cur+=(target-cur)*(1-Math.exp(-dt/100));
+    if(Math.abs(target-cur)<.4)cur=target;
+    scrollTo({top:cur,behavior:'instant'});
+    if(cur===target){raf=0;last=0}else raf=requestAnimationFrame(tick);
+  };
+  addEventListener('wheel',e=>{
+    // biarin native: udah di-handle (zoom foto/tanda tangan), pinch-zoom, scroll horizontal, atau trackpad (delta kecil)
+    if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||e.shiftKey)return;
+    if(Math.abs(e.deltaX)>Math.abs(e.deltaY))return;
+    const d=e.deltaMode===1?e.deltaY*40:e.deltaMode===2?e.deltaY*innerHeight:e.deltaY;
+    if(Math.abs(d)<50)return;
+    e.preventDefault();
+    if(!raf){cur=target=scrollY}
+    target=Math.max(0,Math.min(maxY(),target+d));
+    if(!raf)raf=requestAnimationFrame(tick);
+  },{passive:false});
+  // scroll dari sumber lain (keyboard, drag scrollbar, klik menu): berhentiin animasi & ikutin posisi asli
+  addEventListener('scroll',()=>{
+    if(raf&&Math.abs(scrollY-cur)>3){cancelAnimationFrame(raf);raf=0;last=0}
+    if(!raf)cur=target=scrollY;
+  },{passive:true});
+})();
