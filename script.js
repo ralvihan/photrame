@@ -35,7 +35,7 @@ const video=$('video'),idle=$('idle'),countEl=$('count'),flashEl=$('flash'),dots
 const camBtn=$('camBtn'),shootBtn=$('shootBtn'),clearBtn=$('clearBtn'),dlBtn=$('dlBtn');
 const rawBtn=$('rawBtn'),upBtn=$('upBtn'),upIn=$('upIn');
 let upTarget=null;
-const msg=$('msg'),out=$('out'),slotsEl=$('slots'),nWrap=$('nShots'),tPick=$('tmrPick'),tWrap=$('tmrWrap'),tBtn=$('tmrBtn'),tLbl=$('tmrLbl');
+const msg=$('msg'),out=$('out'),slotsEl=$('slots'),nWrap=$('nShots'),tPick=$('tmrMenu'),tWrap=tPick,tBtn=$('tmrBtn'),tLbl=$('tmrLbl');
 state.timer=0;
 const defaultLayout=n=>[1,Math.min(n,4)];
 state.layout=defaultLayout(1);state.sel=[0];state.active=null;
@@ -491,7 +491,7 @@ function renderN(){
   nWrap.innerHTML=Array.from({length:16},(_,i)=>i+1).map(n=>`<button class="pk${n===state.shots.length?' sel':''}" data-n="${n}">${n}</button>`).join('');
 }
 function renderT(){
-  tPick.innerHTML=Array.from({length:11},(_,i)=>i).map(t=>`<button class="pk${t===state.timer?' sel':''}" data-t="${t}">${t===0?'Off':t+'s'}</button>`).join('');
+  tPick.innerHTML=Array.from({length:11},(_,i)=>i).map(t=>`<button class="tm${t===state.timer?' sel':''}" role="option" aria-selected="${t===state.timer}" data-t="${t}">${t===0?'Off':t+'s'}</button>`).join('');
   tLbl.textContent=state.timer===0?'Off':state.timer+'s';
   tBtn.classList.toggle('on',state.timer>0);
 }
@@ -501,14 +501,20 @@ nWrap.addEventListener('click',e=>{
   resizeShots(n);state.layout=defaultLayout(n);state.sel=[];
   renderN();renderL();buildSlots();scheduleRender();
 });
+// timer = dropdown di atas kamera: klik tombol buat buka, pilih opsi buat set + nutup, klik di luar / Escape buat nutup
+function closeTmr(){tWrap.hidden=true;tBtn.setAttribute('aria-expanded','false')}
 tPick.addEventListener('click',e=>{
-  const b=e.target.closest('.pk');if(!b||state.busy)return;
-  state.timer=+b.dataset.t;renderT();
+  const b=e.target.closest('.tm');if(!b||state.busy)return;
+  state.timer=+b.dataset.t;renderT();closeTmr();
 });
 tBtn.addEventListener('click',()=>{
+  if(state.busy)return;
   tWrap.hidden=!tWrap.hidden;
   tBtn.setAttribute('aria-expanded',String(!tWrap.hidden));
+  if(!tWrap.hidden){const s=tPick.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest'})}
 });
+document.addEventListener('click',e=>{if(!tWrap.hidden&&!e.target.closest('#tmrMenu')&&!e.target.closest('#tmrBtn'))closeTmr()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!tWrap.hidden){closeTmr();tBtn.focus()}});
 clearBtn.addEventListener('click',()=>{state.shots=state.shots.map(()=>null);state.adj=[];state.active=null;scheduleRender()});
 
 let raf=0;

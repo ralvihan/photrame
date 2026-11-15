@@ -71,9 +71,18 @@ h1{font-weight:700;font-size:clamp(2.8rem,8vw,6rem);line-height:1;letter-spacing
 .pick{display:flex;gap:4px;justify-content:center;overflow-x:auto;scrollbar-width:none;padding:2px 4px}
 .pick::-webkit-scrollbar{display:none}
 .pick.lock{opacity:.4;pointer-events:none}
-#tmrPick{justify-content:flex-start}
-#tmrPick .pk:first-child{margin-left:auto}
-#tmrPick .pk:last-child{margin-right:auto}
+/* timer dropdown (di dalam .view, di bawah tombol timer) */
+.tmrBtn .chv{transition:transform .2s}
+.tmrBtn[aria-expanded=true] .chv{transform:rotate(180deg)}
+.tmrMenu{position:absolute;left:12px;top:52px;z-index:4;min-width:96px;max-height:calc(100% - 64px);overflow-y:auto;scrollbar-width:none;padding:6px;border-radius:16px;background:rgba(20,20,22,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:2px;transform-origin:0 0;animation:menuIn .16s ease-out}
+.tmrMenu::-webkit-scrollbar{display:none}
+.tmrMenu[hidden]{display:none}
+.tmrMenu.lock{opacity:.5;pointer-events:none}
+@keyframes menuIn{from{opacity:0;transform:translateY(-6px) scale(.96)}}
+.tm{border:0;background:transparent;color:#e5e7eb;font-family:inherit;font-size:14px;font-weight:600;text-align:left;padding:9px 12px;border-radius:10px;cursor:pointer;transition:background .15s,color .15s}
+.tm:hover{background:rgba(255,255,255,.1)}
+.tm:active{background:rgba(255,255,255,.18)}
+.tm.sel{color:#ffd60a;background:rgba(255,255,255,.12)}
 .pk{flex:none;min-width:34px;height:34px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:#e5e7eb;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s,color .2s}
 .pk:hover{background:rgba(255,255,255,.1)}
 .pk.sel{background:rgba(255,255,255,.16);color:#ffd60a}
