@@ -27,7 +27,7 @@ const $=id=>document.getElementById(id);
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 const state={
-  frame:FRAMES.find(f=>f.id==='photrame'),shots:[null,null,null],busy:false,stream:null,
+  frame:FRAMES.find(f=>f.id==='photrame'),shots:[null],busy:false,stream:null,
   edit:{filter:'none',bright:0,contrast:0,sat:0,warm:0,fade:0,vig:0},
   adj:[],tone:'light',sigs:[],sigSel:null
 };
@@ -36,9 +36,9 @@ const camBtn=$('camBtn'),shootBtn=$('shootBtn'),clearBtn=$('clearBtn'),dlBtn=$('
 const rawBtn=$('rawBtn'),upBtn=$('upBtn'),upIn=$('upIn');
 let upTarget=null;
 const msg=$('msg'),out=$('out'),slotsEl=$('slots'),nWrap=$('nShots'),tPick=$('tmrPick'),tWrap=$('tmrWrap'),tBtn=$('tmrBtn'),tLbl=$('tmrLbl');
-state.timer=3;
+state.timer=0;
 const defaultLayout=n=>[1,Math.min(n,4)];
-state.layout=defaultLayout(3);state.sel=[0,1,2];state.active=null;
+state.layout=defaultLayout(1);state.sel=[0];state.active=null;
 const slotCount=()=>state.layout[0]*state.layout[1];
 function dims(){return{cols:state.layout[0],rows:state.layout[1]}}
 function resizeShots(n){while(state.shots.length<n)state.shots.push(null);state.shots.length=n}
