@@ -388,6 +388,5 @@ nav a.l:active,.chip2:active,.camToggle:active:not(:disabled),.tmrBtn:active,.ph
 .seg{display:inline-flex;gap:4px;padding:4px;background:#f1f2f4;border-radius:999px}
 .segb{width:46px;height:30px;border:0;background:transparent;border-radius:999px;display:grid;place-items:center;color:#6b7280;cursor:pointer;transition:background .2s,color .2s}
 .segb.sel{background:#111;color:#fff}
-#sigPad{aspect-ratio:3/1}
 .fth.fr{min-width:56px}
 .fth.fr canvas{box-shadow:0 0 0 1px rgba(0,0,0,.08)}

@@ -847,6 +847,13 @@ dlBtn.addEventListener('click',()=>{
 const SIG_COLORS=['#000000','#ffffff','#3751ff'];
 const pad=$('sigPad'),padCtx=pad.getContext('2d'),padHint=$('padHint');
 let padStrokes=[],padCur=null;
+// ukuran kanvas ttd: di HP lebih tinggi (4:3) biar lega, di desktop 5:2. nggak diubah kalau lagi ada goresan
+function sizePad(){
+  if(padStrokes.length)return;
+  const h=matchMedia('(max-width:640px)').matches?675:360;
+  if(pad.height!==h)pad.height=h;
+  pad.style.aspectRatio=pad.width+'/'+pad.height;
+}
 const SIG_WIDTHS=[['Thin',4],['Medium',7],['Thick',12]];let padLW=7;
 function strokePath(ctx,pts){
   ctx.beginPath();
@@ -886,7 +893,8 @@ $('sigAdd').addEventListener('click',()=>{
   padStrokes=[];padCur=null;redrawPad();
   renderSigs();scheduleRender();
 });
-redrawPad();
+sizePad();redrawPad();
+matchMedia('(max-width:640px)').addEventListener('change',()=>{sizePad();redrawPad()});
 function renderSigW(){
   $('sigWidth').innerHTML=SIG_WIDTHS.map(([n,w])=>`<button type="button" class="segb${w===padLW?' sel':''}" data-w="${w}" aria-label="${n}" title="${n}"><span class="lw" style="--h:${Math.max(2,Math.round(w/2))}px"></span></button>`).join('');
 }
