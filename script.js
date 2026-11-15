@@ -56,30 +56,30 @@ function renderL(){
   normSel();
 }
 // kartu di fan library: [frame, foto, tone]. urutan = kiri ke kanan
-const LIB=[['blob',[5,6,5]],['uno',[3]],['tag',[2]],['photrame',[1]]];
+const LIB=[['blob',['hero-1','hero-4','hero-1']],['uno',['lib-5']],['tag',['hero-6']],['photrame',['hero-2']]];
 function stripHTML(f,label,ids,tone){
   if(f.midSrc){
     const t=f.t,pc=(v,d)=>(v/d*100)+'%';
-    const sl=ids.map((k,i)=>`<div class="stcw" style="--g:${f.g};left:${pc(t.ox,t.W)};top:${pc(t.oy+i*(t.ph+t.gap),t.H)};width:${pc(t.pw,t.W)};height:${pc(t.ph,t.H)}"><img src="images/lib-${k}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>`);
+    const sl=ids.map((k,i)=>`<div class="stcw" style="--g:${f.g};left:${pc(t.ox,t.W)};top:${pc(t.oy+i*(t.ph+t.gap),t.H)};width:${pc(t.pw,t.W)};height:${pc(t.ph,t.H)}"><img src="images/${k}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>`);
     return `<div class="stc" style="aspect-ratio:${t.W}/${t.H}">${sl[0]}<img class="stcb" src="${f.midSrc}" alt="" loading="lazy" decoding="async" onerror="this.remove()">${sl.slice(1).join('')}<img class="stcf" src="${f.src}" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>`;
   }
   if(f.src){
     const t=f.t,pc=(v,d)=>(v/d*100)+'%',n=t.cols*t.rows,gp=t.gap||0;
     const sl=Array.from({length:n},(_,i)=>{
       const x=t.ox+(i%t.cols)*(t.pw+gp),y=t.oy+Math.floor(i/t.cols)*(t.ph+gp),k=ids[i]!=null?ids[i]:ids[0];
-      return `<div class="stcw" style="--g:${f.g};left:${pc(x,t.W)};top:${pc(y,t.H)};width:${pc(t.pw,t.W)};height:${pc(t.ph,t.H)}"><img src="images/lib-${k}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>`;
+      return `<div class="stcw" style="--g:${f.g};left:${pc(x,t.W)};top:${pc(y,t.H)};width:${pc(t.pw,t.W)};height:${pc(t.ph,t.H)}"><img src="images/${k}.webp" alt="" loading="lazy" decoding="async" onerror="this.remove()"></div>`;
     }).join('');
     const fr=tone&&tone!=='light'?`<canvas class="stcf" data-f="${f.id}" data-tone="${tone}"></canvas>`:`<img class="stcf" src="${f.src}" alt="" loading="lazy" decoding="async" onerror="this.remove()">`;
     return `<div class="stc" style="aspect-ratio:${t.W}/${t.H}">${sl}${fr}${f.id==='photrame'?'<canvas class="stcs" width="600" height="806"></canvas>':''}</div>`;
   }
   const n=ids.length;
-  const w=ids.map(k=>`<div class="stw${n===1?' por':''}" style="--g:${f.g}"><img src="images/lib-${k}.webp" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('ph')" onerror="this.remove()"></div>`).join('');
+  const w=ids.map(k=>`<div class="stw${n===1?' por':''}" style="--g:${f.g}"><img src="images/${k}.webp" alt="" loading="lazy" decoding="async" onload="this.parentElement.classList.add('ph')" onerror="this.remove()"></div>`).join('');
   return `<div class="st" style="background:${f.bg};color:${f.fg}">${w}${label?'<small>Photrame</small>':''}</div>`;
 }
 
 $('fcw').insertAdjacentHTML('beforeend',LIB.map(([id,ids,tone],i)=>{
   const f=FRAMES.find(f=>f.id===id),ar=f.t.W/f.t.H*(id==='ticket'?.5:1); // ticket lebar: tingginya setengah kartu lain
-  return `<div class="fk ${id==='ticket'?'tk':'k'+i}" style="width:calc(var(--h)*${ar.toFixed(4)})">${stripHTML(f,true,ids,tone)}</div>`;
+  return `<div class="fk k${i}" tabindex="0" role="button" aria-label="${f.name} frame" style="width:calc(var(--h)*${ar.toFixed(4)})">${stripHTML(f,true,ids,tone)}</div>`;
 }).join(''));
 
 // frame PNG yang di library pakai tone dark/blue: gambar versi recolor-nya ke canvas (nunggu PNG frame kebaca)
@@ -92,6 +92,18 @@ function drawLibTints(){
     cv.getContext('2d').drawImage(src,0,0);
   });
 }
+// klik kartu di library: kartu geser dikit ke kiri (keluar dari tumpukan) biar kelihatan semua, klik lagi / klik di luar buat balikin
+function pullCard(el){
+  const on=el&&!el.classList.contains('pulled');
+  document.querySelectorAll('.fk.pulled').forEach(k=>k.classList.remove('pulled'));
+  if(on)el.classList.add('pulled');
+}
+$('fcw').addEventListener('click',e=>{const k=e.target.closest('.fk');if(k){e.stopPropagation();pullCard(k)}});
+$('fcw').addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  const k=e.target.closest('.fk');if(k){e.preventDefault();pullCard(k)}
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.fk'))pullCard(null)});
 function drawLibSig(){
   document.querySelectorAll('.stcs').forEach(cv=>{
     const ctx=cv.getContext('2d');ctx.clearRect(0,0,cv.width,cv.height);
