@@ -35,8 +35,11 @@ const video=$('video'),idle=$('idle'),countEl=$('count'),flashEl=$('flash'),dots
 const camBtn=$('camBtn'),shootBtn=$('shootBtn'),clearBtn=$('clearBtn'),dlBtn=$('dlBtn');
 const rawBtn=$('rawBtn'),upBtn=$('upBtn'),upIn=$('upIn');
 let upTarget=null;
-const msg=$('msg'),out=$('out'),slotsEl=$('slots'),nWrap=$('nShots'),tPick=$('tmrMenu'),tWrap=tPick,tBtn=$('tmrBtn'),tLbl=$('tmrLbl');
+const msg=$('msg'),out=$('out'),slotsEl=$('slots'),nWrap=$('phMenu'),tPick=$('tmrMenu'),tWrap=tPick,tBtn=$('tmrBtn'),tLbl=$('tmrLbl');
 state.timer=0;
+const MAX_SHOTS=10; // batas foto per sesi (picker jumlah foto + upload)
+const CAM_RATIO=4/5; // rasio kamera + hasil jepretan + thumbnail (lebar/tinggi). 1 = kotak, 3/4 = agak pendek, 4/5 = lebih tinggi
+video.parentElement.style.aspectRatio=String(CAM_RATIO);
 const defaultLayout=n=>[1,Math.min(n,4)];
 state.layout=defaultLayout(1);state.sel=[0];state.active=null;
 const slotCount=()=>state.layout[0]*state.layout[1];
@@ -455,12 +458,12 @@ function drawStrip(cv,S){
 }
 
 function buildSlots(){
-  const n=state.shots.length,r=n===1?4/5:4/3,ch=Math.round(240/r);
+  const n=state.shots.length,r=CAM_RATIO,ch=Math.round(240/r);
   slotsEl.style.gridTemplateColumns=`repeat(${Math.min(n,4)},1fr)`;
   const one=n===1;
   slotsEl.style.maxWidth=one?'220px':'';
   slotsEl.style.margin=one?'0 auto':'';
-  slotsEl.innerHTML=Array.from({length:n},(_,i)=>`<div class="slot" data-i="${i}" style="aspect-ratio:${one?'4/5':'4/3'}"><canvas width="240" height="${ch}"></canvas><span class="num"></span><button class="dl" data-i="${i}">Save</button><button class="rt" data-i="${i}">Retake</button></div>`).join('');
+  slotsEl.innerHTML=Array.from({length:n},(_,i)=>`<div class="slot" data-i="${i}" style="aspect-ratio:${CAM_RATIO}"><canvas width="240" height="${ch}"></canvas><span class="num"></span><button class="dl" data-i="${i}">Save</button><button class="rt" data-i="${i}">Retake</button></div>`).join('');
 }
 function refreshSlots(){
   [...slotsEl.children].forEach((el,i)=>{
@@ -488,7 +491,8 @@ slotsEl.addEventListener('click',e=>{
   shootList([+b.dataset.i]);
 });
 function renderN(){
-  nWrap.innerHTML=Array.from({length:16},(_,i)=>i+1).map(n=>`<button class="pk${n===state.shots.length?' sel':''}" data-n="${n}">${n}</button>`).join('');
+  nWrap.innerHTML=Array.from({length:MAX_SHOTS},(_,i)=>i+1).map(n=>`<button class="tm${n===state.shots.length?' sel':''}" role="option" aria-selected="${n===state.shots.length}" data-n="${n}">${n}</button>`).join('');
+  $('phLbl').textContent=state.shots.length;
 }
 function renderT(){
   tPick.innerHTML=Array.from({length:11},(_,i)=>i).map(t=>`<button class="tm${t===state.timer?' sel':''}" role="option" aria-selected="${t===state.timer}" data-t="${t}">${t===0?'Off':t+'s'}</button>`).join('');
@@ -496,25 +500,27 @@ function renderT(){
   tBtn.classList.toggle('on',state.timer>0);
 }
 nWrap.addEventListener('click',e=>{
-  const b=e.target.closest('.pk');if(!b||state.busy)return;
+  const b=e.target.closest('.tm');if(!b||state.busy)return;
   const n=+b.dataset.n;
   resizeShots(n);state.layout=defaultLayout(n);state.sel=[];
-  renderN();renderL();buildSlots();scheduleRender();
+  renderN();renderL();buildSlots();scheduleRender();closeDDs();
 });
-// timer = dropdown di atas kamera: klik tombol buat buka, pilih opsi buat set + nutup, klik di luar / Escape buat nutup
-function closeTmr(){tWrap.hidden=true;tBtn.setAttribute('aria-expanded','false')}
 tPick.addEventListener('click',e=>{
   const b=e.target.closest('.tm');if(!b||state.busy)return;
-  state.timer=+b.dataset.t;renderT();closeTmr();
+  state.timer=+b.dataset.t;renderT();closeDDs();
 });
-tBtn.addEventListener('click',()=>{
+// dropdown di atas kamera (timer & jumlah foto): klik tombol buat buka (yang lain nutup), pilih opsi buat set + nutup, klik di luar / Escape buat nutup
+const DDS=[[tBtn,tWrap],[$('phBtn'),nWrap]];
+function closeDDs(except){DDS.forEach(([b,m])=>{if(m!==except){m.hidden=true;b.setAttribute('aria-expanded','false')}})}
+DDS.forEach(([b,m])=>b.addEventListener('click',()=>{
   if(state.busy)return;
-  tWrap.hidden=!tWrap.hidden;
-  tBtn.setAttribute('aria-expanded',String(!tWrap.hidden));
-  if(!tWrap.hidden){const s=tPick.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest'})}
-});
-document.addEventListener('click',e=>{if(!tWrap.hidden&&!e.target.closest('#tmrMenu')&&!e.target.closest('#tmrBtn'))closeTmr()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!tWrap.hidden){closeTmr();tBtn.focus()}});
+  closeDDs(m);
+  m.hidden=!m.hidden;
+  b.setAttribute('aria-expanded',String(!m.hidden));
+  if(!m.hidden){const s=m.querySelector('.sel');if(s)s.scrollIntoView({block:'nearest'})}
+}));
+document.addEventListener('click',e=>{if(!e.target.closest('.dd'))closeDDs()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDDs()});
 clearBtn.addEventListener('click',()=>{state.shots=state.shots.map(()=>null);state.adj=[];state.active=null;scheduleRender()});
 
 let raf=0;
@@ -566,7 +572,7 @@ function closeCamera(){
 camBtn.addEventListener('click',()=>state.stream?closeCamera():openCamera());
 
 function grabFrame(){
-  const vw=video.videoWidth,vh=video.videoHeight,target=4/3;
+  const vw=video.videoWidth,vh=video.videoHeight,target=CAM_RATIO;
   let sw=vw,sh=vw/target;
   if(sh>vh){sh=vh;sw=vh*target}
   const sx=(vw-sw)/2,sy=(vh-sh)/2;
@@ -629,13 +635,13 @@ async function handleFiles(list,target){
   else{
     idx=state.shots.map((s,i)=>s?-1:i).filter(i=>i>=0);
     if(files.length>idx.length){
-      const n=Math.min(16,state.shots.length+files.length-idx.length);
+      const n=Math.min(MAX_SHOTS,state.shots.length+files.length-idx.length);
       const old=state.shots.length;
       resizeShots(n);state.layout=defaultLayout(n);state.sel=[];
       for(let i=old;i<n;i++)idx.push(i);
       renderN();renderL();buildSlots();
     }
-    if(files.length>idx.length){msg.textContent='Max 16 photos. Extra files were skipped.';files=files.slice(0,idx.length)}
+    if(files.length>idx.length){msg.textContent='Max '+MAX_SHOTS+' photos. Extra files were skipped.';files=files.slice(0,idx.length)}
   }
   state.busy=true;updateUI();
   let failed=0;
@@ -945,7 +951,7 @@ $('adjReset').addEventListener('click',()=>{
 function begin(x,y){
   const d=drag;d.on=true;state.active=null;
   const g=document.createElement('div');g.className='dragGhost';
-  const cv=document.createElement('canvas'),w=160,h=Math.round(w/(state.shots.length===1?4/5:4/3));
+  const cv=document.createElement('canvas'),w=160,h=Math.round(w/CAM_RATIO);
   cv.width=w;cv.height=h;cv.getContext('2d').drawImage(processed(state.shots[d.shot],w,h),0,0);
   g.appendChild(cv);document.body.appendChild(g);d.ghost=g;
   document.body.classList.add('dragging');

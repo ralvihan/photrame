@@ -49,7 +49,7 @@ h1{font-weight:700;font-size:clamp(2.8rem,8vw,6rem);line-height:1;letter-spacing
 .card{background:#fff;border:1px solid #e5e7eb;border-radius:24px;padding:20px}
 .ct{font-size:13px;font-weight:600;color:#6b7280;margin-bottom:14px;letter-spacing:.02em;text-transform:uppercase}
 .cam{max-width:480px;margin:0 auto;padding:12px 12px 18px;border-radius:32px;background:#0c0c0d;border-color:#0c0c0d;box-shadow:0 24px 70px rgba(0,0,0,.22)}
-.view{position:relative;aspect-ratio:4/3;border-radius:20px;overflow:hidden;background:#1a1a1c;display:grid;place-items:center}
+.view{position:relative;aspect-ratio:4/5;border-radius:20px;overflow:hidden;background:#1a1a1c;display:grid;place-items:center;container-type:size}
 .view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
 .idle{position:relative;color:#9ca3af;text-align:center;font-size:14px;padding:20px;line-height:1.5}
 .count{position:absolute;inset:0;display:none;place-items:center;font-size:clamp(3.5rem,14vw,6rem);font-weight:700;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,.5);pointer-events:none}
@@ -59,11 +59,14 @@ h1{font-weight:700;font-size:clamp(2.8rem,8vw,6rem);line-height:1;letter-spacing
 .dots{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:center;gap:8px;pointer-events:none}
 .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4)}
 .dots i.on{background:#ffd60a}
-.camToggle,.tmrBtn{position:absolute;top:12px;z-index:3;border:0;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;color:#fff;background:rgba(20,20,22,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-radius:999px;padding:8px 14px;transition:background .2s}
-.camToggle{right:12px}
-.camToggle:hover,.tmrBtn:hover{background:rgba(20,20,22,.75)}
+.camToggle,.tmrBtn,.phBtn{position:relative;z-index:3;border:0;cursor:pointer;font-family:inherit;font-weight:600;font-size:13px;color:#fff;background:rgba(20,20,22,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-radius:999px;padding:8px 14px;transition:background .2s}
+/* bar atas kamera: [timer ▾] [jumlah foto ▾] ........ [Open/Close camera] */
+.camBar{position:absolute;top:12px;left:12px;right:12px;z-index:5;display:flex;align-items:flex-start;gap:8px}
+.dd{position:relative}
+.camToggle{margin-left:auto}
+.camToggle:hover,.tmrBtn:hover,.phBtn:hover{background:rgba(20,20,22,.75)}
 .camToggle:disabled{opacity:.4;cursor:not-allowed}
-.tmrBtn{left:12px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 10px}
+.tmrBtn,.phBtn{display:inline-flex;align-items:center;gap:6px;padding:7px 10px}
 .tmrBtn.on{color:#ffd60a}
 .pickWrap{margin-top:14px;text-align:center}
 .pickWrap[hidden]{display:none}
@@ -72,9 +75,10 @@ h1{font-weight:700;font-size:clamp(2.8rem,8vw,6rem);line-height:1;letter-spacing
 .pick::-webkit-scrollbar{display:none}
 .pick.lock{opacity:.4;pointer-events:none}
 /* timer dropdown (di dalam .view, di bawah tombol timer) */
-.tmrBtn .chv{transition:transform .2s}
-.tmrBtn[aria-expanded=true] .chv{transform:rotate(180deg)}
-.tmrMenu{position:absolute;left:12px;top:52px;z-index:4;min-width:96px;max-height:calc(100% - 64px);overflow-y:auto;scrollbar-width:none;padding:6px;border-radius:16px;background:rgba(20,20,22,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:2px;transform-origin:0 0;animation:menuIn .16s ease-out}
+.chv{transition:transform .2s}
+[aria-expanded=true]>.chv{transform:rotate(180deg)}
+@media (max-width:380px){.camToggle,.tmrBtn,.phBtn{padding:7px 10px;font-size:12px}.chv{display:none}}
+.tmrMenu{position:absolute;left:0;top:calc(100% + 6px);z-index:4;min-width:96px;max-height:200px;max-height:calc(100cqh - 64px);overflow-y:auto;scrollbar-width:none;padding:6px;border-radius:16px;background:rgba(20,20,22,.82);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:2px;transform-origin:0 0;animation:menuIn .16s ease-out}
 .tmrMenu::-webkit-scrollbar{display:none}
 .tmrMenu[hidden]{display:none}
 .tmrMenu.lock{opacity:.5;pointer-events:none}
@@ -104,7 +108,7 @@ select,input[type=text]{font-family:inherit;font-size:13px;padding:6px 10px;bord
 .col{display:flex;flex-direction:column;gap:20px}
 .sticky{position:sticky;top:90px}
 .slots{display:grid;gap:10px}
-.slot{position:relative;aspect-ratio:4/3;border-radius:0;background:#eef0f3;overflow:hidden}
+.slot{position:relative;aspect-ratio:4/5;border-radius:0;background:#eef0f3;overflow:hidden}
 .slot canvas{position:absolute;inset:0;width:100%;height:100%;display:none}
 .slot.has canvas{display:block}
 .slot .num{position:absolute;left:8px;top:8px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center}
@@ -316,9 +320,9 @@ body{-webkit-touch-callout:none}
 
 /* ===== efek tekan (button "mendem" pas diklik/ditap, lepas = mantul dikit) ===== */
 button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.btn,.chip2,.pk,.camToggle,.tmrBtn,.slot .rt,.slot .dl,.swc,.cx,.sgx,nav a.l{transition:transform .16s cubic-bezier(.3,.7,.4,1.5),box-shadow .16s,background .2s,opacity .2s,color .2s}
+.btn,.chip2,.pk,.camToggle,.tmrBtn,.phBtn,.slot .rt,.slot .dl,.swc,.cx,.sgx,nav a.l{transition:transform .16s cubic-bezier(.3,.7,.4,1.5),box-shadow .16s,background .2s,opacity .2s,color .2s}
 .btn:active:not(:disabled){transform:translateY(1px) scale(.95);box-shadow:0 3px 10px rgba(0,0,0,.2);transition-duration:.07s}
 .btn.sm:active:not(:disabled),.btn.ghost:active:not(:disabled){box-shadow:none}
-nav a.l:active,.chip2:active,.camToggle:active:not(:disabled),.tmrBtn:active{transform:scale(.94);transition-duration:.07s}
+nav a.l:active,.chip2:active,.camToggle:active:not(:disabled),.tmrBtn:active,.phBtn:active{transform:scale(.94);transition-duration:.07s}
 .pk:active,.swc:active,.cx:active,.sgx:active{transform:scale(.88);transition-duration:.07s}
 .slot .rt:active:not(:disabled),.slot .dl:active{transform:scale(.92);transition-duration:.07s}
