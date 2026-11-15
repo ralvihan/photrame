@@ -156,28 +156,32 @@ function drawLibSig(){
 drawLibSig();
 
 function renderTone(){
-  $('toneCard').hidden=!state.frame.src;
+  $('toneRow').hidden=!state.frame.src;
   const el=$('tonePicker');
   const tones=[['light',state.frame.lightName||'White',state.frame.lightColor||'#ffffff'],['dark','Black','#111111']];
   if(state.frame.blue)tones.push(['blue','Blue','#3751ff']);
-  el.innerHTML=tones.map(([id,n,c])=>`<button class="chip2 ${state.tone===id?'sel':''}" data-tone="${id}"><i style="background:${c}"></i>${n}</button>`).join('');
+  el.innerHTML=tones.map(([id,n,c])=>`<button type="button" class="tnb${state.tone===id?' sel':''}" data-tone="${id}" aria-label="${n}" title="${n}" style="--c:${c}"></button>`).join('');
+  $('toneName').textContent=(tones.find(t=>t[0]===state.tone)||tones[0])[1];
 }
 $('tonePicker').addEventListener('click',e=>{
   const b=e.target.closest('[data-tone]');if(!b)return;
   state.tone=b.dataset.tone;renderTone();scheduleRender();
 });
-// picker cuma nampilin frame custom (yang punya PNG)
+// picker cuma nampilin frame custom (yang punya PNG). dibangun sekali, thumbnail-nya digambar updateFrameThumbs()
 function renderFramePicker(){
-  $('framePicker').innerHTML='<div class="chips">'+FRAMES.filter(f=>f.src).map(f=>`<button class="chip2 ${f.id===state.frame.id?'sel':''}" data-id="${f.id}">${f.name}</button>`).join('')+'</div>';
+  const box=$('framePicker');
+  if(!box.children.length){
+    box.innerHTML=FRAMES.filter(f=>f.src).map(f=>`<button type="button" class="fth fr" data-id="${f.id}"><canvas width="${Math.round(FTH*f.t.W/f.t.H)}" height="${FTH}"></canvas><span>${f.name}</span></button>`).join('');
+  }
+  box.querySelectorAll('.fth').forEach(b=>{const on=b.dataset.id===state.frame.id;b.classList.toggle('sel',on);b.setAttribute('aria-pressed',on)});
 }
-$('framePicker').addEventListener('click',e=>{const c=e.target.closest('.chip2');if(c)pickFrame(c.dataset.id,false)});
 function pickFrame(id,go){
   const f=FRAMES.find(f=>f.id===id)||state.frame;
   if(state.frame.t&&!f.t)state.layout=defaultLayout(state.shots.length);
   state.frame=f;
   if(state.tone==='blue'&&!f.blue)state.tone='light';
   renderFramePicker();renderTone();renderL();syncSig();scheduleRender();
-  if(go)navTo('/booth',true);
+  if(go){navTo('/booth',true);frS.center(true)}
 }
 
 // ===== card Edit: tab Filters/Adjust, strip thumbnail filter (pakai foto yang lagi aktif), slider dua arah =====
@@ -210,35 +214,45 @@ function updateFilterThumbs(){
       });
     }
   }
-  fadeSync();
+  fadeAll();
 }
-function fadeSync(){
-  if(fstrip.offsetParent===null)return;
-  fwrap.classList.toggle('fl',fstrip.scrollLeft>2);
-  fwrap.classList.toggle('fr',fstrip.scrollLeft+fstrip.clientWidth<fstrip.scrollWidth-2);
+// strip yang bisa digeser (dipakai filter & frame): drag pakai mouse, swipe di HP, ujung pudar kalau masih ada yang kepotong
+const strips=[];
+function initStrip(strip,wrap,onPick){
+  const o={strip,wrap};
+  o.fade=()=>{
+    if(strip.offsetParent===null)return;
+    wrap.classList.toggle('fl',strip.scrollLeft>2);
+    wrap.classList.toggle('fr',strip.scrollLeft+strip.clientWidth<strip.scrollWidth-2);
+  };
+  o.center=smooth=>{
+    const s=strip.querySelector('.fth.sel');if(!s)return;
+    strip.scrollTo({left:s.offsetLeft-(strip.clientWidth-s.offsetWidth)/2,behavior:smooth?'smooth':'auto'});
+  };
+  let dragX=null,dragSL=0,dragged=false;
+  strip.addEventListener('scroll',o.fade,{passive:true});
+  strip.addEventListener('pointerdown',e=>{dragged=false;if(e.pointerType!=='mouse'||e.button!==0)return;dragX=e.clientX;dragSL=strip.scrollLeft});
+  addEventListener('pointermove',e=>{
+    if(dragX==null)return;
+    const dx=e.clientX-dragX;
+    if(!dragged&&Math.abs(dx)>5){dragged=true;strip.classList.add('drag')}
+    if(dragged)strip.scrollLeft=dragSL-dx;
+  });
+  addEventListener('pointerup',()=>{if(dragX==null)return;dragX=null;strip.classList.remove('drag')});
+  strip.addEventListener('click',e=>{
+    if(dragged){dragged=false;return}
+    const c=e.target.closest('.fth');if(c)onPick(c);
+  });
+  strips.push(o);return o;
 }
-fstrip.addEventListener('scroll',fadeSync,{passive:true});
-addEventListener('resize',fadeSync);
-// geser pakai mouse (drag); di HP sudah bisa swipe native
-let dragX=null,dragSL=0,dragged=false;
-fstrip.addEventListener('pointerdown',e=>{dragged=false;if(e.pointerType!=='mouse'||e.button!==0)return;dragX=e.clientX;dragSL=fstrip.scrollLeft});
-addEventListener('pointermove',e=>{
-  if(dragX==null)return;
-  const dx=e.clientX-dragX;
-  if(!dragged&&Math.abs(dx)>5){dragged=true;fstrip.classList.add('drag')}
-  if(dragged)fstrip.scrollLeft=dragSL-dx;
-});
-addEventListener('pointerup',()=>{if(dragX==null)return;dragX=null;fstrip.classList.remove('drag')});
-fstrip.addEventListener('click',e=>{
-  if(dragged){dragged=false;return}
-  const c=e.target.closest('.fth');if(!c)return;
-  state.edit.filter=c.dataset.f;renderFilters();scheduleRender();
-});
-function centerSel(){const s=fstrip.querySelector('.fth.sel');if(s)fstrip.scrollLeft=s.offsetLeft-(fstrip.clientWidth-s.offsetWidth)/2}
+const fadeAll=()=>strips.forEach(o=>o.fade());
+addEventListener('resize',fadeAll);
+const fS=initStrip(fstrip,fwrap,c=>{state.edit.filter=c.dataset.f;renderFilters();scheduleRender()});
+const frS=initStrip($('framePicker'),$('frwrap'),c=>pickFrame(c.dataset.id,false));
 function showTab(t){
   tabs.forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('sel',on);b.setAttribute('aria-selected',on)});
   $('tpFilters').hidden=t!=='filters';$('tpAdjust').hidden=t!=='adjust';
-  if(t==='filters'){centerSel();fadeSync()}
+  if(t==='filters'){fS.center();fS.fade()}
 }
 tabs.forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.t)));
 // titik kuning di tab = ada yang diubah di tab itu (biar kelihatan walau tabnya lagi ketutup)
@@ -265,6 +279,51 @@ $('resetEdit').addEventListener('click',()=>{
   EDIT_KEYS.forEach(k=>{$(k).value=0;syncRange(k)});
   renderFilters();fstrip.scrollTo({left:0,behavior:'smooth'});scheduleRender();
 });
+
+// ===== card Style: thumbnail frame (mini-render pakai foto aktif + tone + edit sekarang), tab Frame/Signature =====
+const FTH=208; // tinggi thumbnail frame (px kanvas, tampil 104px)
+const shotIds=new WeakMap();let shotSeq=0;
+const shotId=s=>{if(!shotIds.has(s))shotIds.set(s,++shotSeq);return shotIds.get(s)};
+let ftKey='',ftTimer=0,ftJob=0,ftDrawn=false;
+function renderFrameThumb(f,s){
+  const btn=$('framePicker').querySelector(`[data-id="${f.id}"]`);if(!btn||!f.t)return;
+  const cv=btn.firstChild,tmp=document.createElement('canvas');
+  const sv={frame:state.frame,layout:state.layout,sel:state.sel,adj:state.adj,sigs:state.sigs,tone:state.tone};
+  try{
+    state.frame=f;state.layout=[f.t.cols,f.t.rows];
+    state.tone=(sv.tone==='blue'&&!f.blue)?'light':sv.tone;
+    state.sel=Array(f.t.cols*f.t.rows).fill(Math.max(0,state.shots.indexOf(s)));
+    state.adj=[];state.sigs=[];
+    drawStrip(tmp,FTH/f.t.H);
+  }catch(e){return}
+  finally{Object.assign(state,sv)}
+  cv.width=tmp.width;cv.height=tmp.height;cv.getContext('2d').drawImage(tmp,0,0);
+}
+function drawFrameThumbs(s,job){
+  const list=FRAMES.filter(f=>f.src);let i=0;
+  (function step(){
+    if(job!==ftJob)return;
+    const f=list[i++];if(!f){ftDrawn=true;fadeAll();return}
+    renderFrameThumb(f,s);setTimeout(step,0); // satu frame per giliran, biar tint frame besar nggak nge-freeze
+  })();
+}
+function updateFrameThumbs(){
+  const s=thumbShot();if(!s)return;
+  const loaded=FRAMES.filter(f=>f.img&&f.img.complete&&f.img.naturalWidth).length;
+  const key=[shotId(s),state.tone,JSON.stringify(state.edit),loaded].join('|');
+  if(key===ftKey)return;
+  ftKey=key;clearTimeout(ftTimer);
+  const job=++ftJob;
+  ftTimer=setTimeout(()=>drawFrameThumbs(s,job),ftDrawn?150:0);
+}
+const styleTabs=[...document.querySelectorAll('#styleTabs .tab')];
+function showStyleTab(t){
+  styleTabs.forEach(b=>{const on=b.dataset.t===t;b.classList.toggle('sel',on);b.setAttribute('aria-selected',on)});
+  $('tpFrame').hidden=t!=='frame';$('sigCard').hidden=t!=='sig';
+  if(t==='frame'){frS.center();frS.fade()}
+}
+styleTabs.forEach(b=>b.addEventListener('click',()=>showStyleTab(b.dataset.t)));
+const syncStyleTabs=()=>styleTabs[1].classList.toggle('mod',state.sigs.length>0);
 
 function getAdj(i){const a=state.adj[i];return a&&a.s===state.sel[i]?a:null}
 function dropAdj(shot){state.adj=state.adj.map(a=>a&&a.s===shot?null:a)}
@@ -597,7 +656,7 @@ clearBtn.addEventListener('click',()=>{state.shots=state.shots.map(()=>null);sta
 let raf=0;
 function scheduleRender(){
   cancelAnimationFrame(raf);
-  raf=requestAnimationFrame(()=>{drawStrip(out,1);renderCells();refreshSlots();updateUI();updateFilterThumbs()});
+  raf=requestAnimationFrame(()=>{drawStrip(out,1);renderCells();refreshSlots();updateUI();updateFilterThumbs();updateFrameThumbs();syncStyleTabs()});
 }
 function updateUI(){
   const n=state.shots.length;
@@ -829,15 +888,15 @@ $('sigAdd').addEventListener('click',()=>{
 });
 redrawPad();
 function renderSigW(){
-  $('sigWidth').innerHTML=SIG_WIDTHS.map(([n,w])=>`<button type="button" class="chip2${w===padLW?' sel':''}" data-w="${w}"><span class="lw" style="--h:${Math.max(2,Math.round(w/2))}px"></span>${n}</button>`).join('');
+  $('sigWidth').innerHTML=SIG_WIDTHS.map(([n,w])=>`<button type="button" class="segb${w===padLW?' sel':''}" data-w="${w}" aria-label="${n}" title="${n}"><span class="lw" style="--h:${Math.max(2,Math.round(w/2))}px"></span></button>`).join('');
 }
 $('sigWidth').addEventListener('click',e=>{const b=e.target.closest('[data-w]');if(!b)return;padLW=+b.dataset.w;renderSigW()});
 // tanda tangan cuma aktif di frame Photrame (1x1)
 const sigOK=()=>state.frame.id==='photrame';
 function syncSig(){
   const ok=sigOK();
-  $('sigCard').hidden=!ok;
-  if(!ok)state.sigSel=null;
+  $('styleTabs').hidden=!ok;
+  if(!ok){state.sigSel=null;showStyleTab('frame')}
   renderSigs();
 }
 

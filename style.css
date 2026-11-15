@@ -346,7 +346,8 @@ nav a.l:active,.chip2:active,.camToggle:active:not(:disabled),.tmrBtn:active,.ph
 .tabs{display:flex;gap:4px;padding:4px;background:#f1f2f4;border-radius:999px;width:fit-content;margin-bottom:16px}
 .tab{position:relative;border:0;background:transparent;font-family:inherit;font-size:14px;font-weight:600;color:#6b7280;padding:7px 20px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
 .tab.sel{background:#111;color:#fff}
-.tab.mod::after{content:"";position:absolute;top:7px;right:9px;width:6px;height:6px;border-radius:50%;background:#ffd60a}
+.tab.mod::after{content:"";position:absolute;top:7px;right:9px;width:6px;height:6px;border-radius:50%;background:#111;transition:background .2s}
+.tab.sel.mod::after{background:#fff}
 /* strip thumbnail filter (geser kiri-kanan, ujungnya pudar kalau masih ada yang kepotong) */
 .fstripw{margin:0 -6px}
 .fstrip{position:relative;display:flex;gap:10px;overflow-x:auto;padding:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch;cursor:grab}
@@ -374,3 +375,19 @@ nav a.l:active,.chip2:active,.camToggle:active:not(:disabled),.tmrBtn:active,.ph
 .rg:focus-visible::-moz-range-thumb{box-shadow:0 0 0 1px rgba(0,0,0,.2),0 0 0 5px rgba(17,17,17,.2)}
 /* strip filter panjang: kolom grid & card jangan ikut melebar (min-width:auto bawaan grid/flex) */
 .panel>*,.col,.col>.card{min-width:0}
+/* ===== card Style: thumbnail frame, swatch warna, tab Signature ===== */
+.tabs[hidden],.swr[hidden]{display:none}
+.fth.fr{width:auto}
+.fth.fr canvas{width:auto;height:104px;border-radius:12px;background:#f1f2f4}
+.swr{display:flex;align-items:center;gap:14px;margin-top:14px}
+.sws{display:flex;gap:12px;padding:3px}
+.swn{font-size:13px;font-weight:600;color:#6b7280}
+.tnb{width:28px;height:28px;border-radius:50%;border:0;padding:0;background:var(--c);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .2s,transform .16s cubic-bezier(.3,.7,.4,1.5)}
+.tnb.sel{outline-color:#111}
+.tnb:active{transform:scale(.9)}
+.seg{display:inline-flex;gap:4px;padding:4px;background:#f1f2f4;border-radius:999px}
+.segb{width:46px;height:30px;border:0;background:transparent;border-radius:999px;display:grid;place-items:center;color:#6b7280;cursor:pointer;transition:background .2s,color .2s}
+.segb.sel{background:#111;color:#fff}
+#sigPad{aspect-ratio:3/1}
+.fth.fr{min-width:56px}
+.fth.fr canvas{box-shadow:0 0 0 1px rgba(0,0,0,.08)}
